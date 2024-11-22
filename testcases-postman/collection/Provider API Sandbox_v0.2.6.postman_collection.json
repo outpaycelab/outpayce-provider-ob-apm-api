@@ -1,0 +1,3260 @@
+{
+	"info": {
+		"_postman_id": "e74d60b4-049c-4818-8156-567fc653990b",
+		"name": "Provider API Sandbox",
+		"description": "## v0.2.6\n\n## **Introduction**\n\nThe Provider API is a REST API for any payment provider needing to connect to Amadeus Payment Platform.\n\nThe goal of this _Postman collection_ is to help you test that everything is working correctly at your end before connecting to Amadeus. You will be able to play with use cases connected directly to your own server. To have all functionalities available, you must use the [Postman desktop app](https://).\n\nThis _Postman collection_ will run a serie of requests to your server and will check if the answer obtained is what expected. On the contrary, it will highlight what is failing.\n\n| **⚠ Attention:** You can only modify the values of the variables inside the environment. We ensure that the use cases are working only if:  <br>\\- You don't modify the body of the requests.  <br>**\\-** You don't modify the path of the request.  <br>If you make any of these modifications we won't know if everything works as expected. |\n| --- |\n\n## **Variable setting**\n\nBefore you can run the Sandbox Collection, you have to [import the environment](https://) from the repository and to fill the values for the different variables.\n\n## **Authentication method**\n\nTo connect to your server, you may need to use an authentication method.  \nIn order to do so, a script has been implemented in the pre-request script of the root folder of the collection. This will add an authentication header with a basic base64 encoding of your credentials as such:\n\nAuthorization: Basic XH1hZUI1c194cBN6T\n\nThe credentials have to be filled directly in the Postman environment as values of:\n\n- CONNECTION_LOGIN\n    \n- CONNECTION_PWD\n    \n\n### **Path & headers variables:**\n\n_Mandatory to perform any type of operation_\n\n| **Variable name** | **Set by the user** | **Default value** | **Information** |\n| --- | --- | --- | --- |\n| CONNECTION_LOGIN | yes | \\-- | The login/username expected to connect to your server |\n| CONNECTION_PWD | yes | \\-- | The password associated to the login expected to connect to your server |\n| BASE_URL | yes | \\-- | The URL of your server |\n| REQUEST_TYPE | no | Set in the pre-request scripts | Part of the path request |\n| CONTENT_TYPE | no | application/vnd.amadeus+json | Media type, sent in the header |\n\n## Requests\n\nThe differences between the requests of each folder are related to the data sent in the body, to have more details of what is sent in each case, you can directly check the body.\n\nAdditionnal information on each field can be found in the swagger specifications.\n\n## **Limitation**\n\nThe current version of this collection only supports credit card as the method of payment.\n\n## Tests\n\nWhen running this collection a series of tests will be done to ensure that everything works as expected.\n\nChecks performed when running the collection:\n\n- Http status of the response is 201\n    \n- Content-type\n    \n- JSON format\n    \n- Body content and values\n    \n- Card number\n    \n- _approvalCode_ format when present\n    \n- _timestamp_ format\n    \n\n## Run the collection\n\nOnce you have set the environment variables, you will be able to run the collection. You can select if you want to run the full collection or some specific folder or request.\n\n1. Set the environment that you want to use (in the Environments tab or in the upper right drop-down menu).\n    \n2. To run the collection, you have to select the desired folder/request and press the _Run_ button. ([How to run a collection?](https://))\n    \n3. **⚠ Attention**: When you run the tests in the 3DS folder, pay attention to the vendor used, as Mastercard and American express have different behaviour\n    \n\n## Go for certification\n\nIn order to start the certification phase of the plugin you developped, you'll need to provide a report of a full execution of the collection. Please pay attention to the details below:\n\n- We expect you to execute all the positive AND negative usecases of the collection for 1 vendor and 1 currencie only (The rest will be assessed during the certification phase).\n    \n- Some usecases include 3ds data and are designed for a specific vendor (more details in each request documentation further in this file). You can deselect the usecases that are not compatible with the vendor you're using at execution time.\n    \n- At the end of the execution you'll have to export the results in a json file, and upload it on the test section of Github discussions.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "31897104"
+	},
+	"item": [
+		{
+			"name": "Positive cases",
+			"item": [
+				{
+					"name": "Authorization",
+					"item": [
+						{
+							"name": "Standard usecases",
+							"item": [
+								{
+									"name": "Author w/ flight data",
+									"request": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "{{CONTENT_TYPE}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n    \"data\": {\r\n        \"purposeOfOperation\": {\r\n            \"sales\": [\r\n                {\r\n                    \"salesItems\": [\r\n                        {\r\n                            \"flightSalesDetails\": {\r\n                                \"passenger\": {\r\n                                    \"name\": {\r\n                                        \"firstName\": \"{{PASS_FNAME}}\",\r\n                                        \"lastName\": \"{{PASS_LNAME}}\"\r\n                                    },\r\n                                    \"flightPassengerType\": \"{{PASS_TYPE}}\"\r\n                                },\r\n                                \"flightLegs\": [\r\n                                    {\r\n                                        \"departureAirportCode\": \"{{DEP_AIRPORT}}\",\r\n                                        \"travelDate\":\"{{TRAVEL_DATE}}\",\r\n                                        \"departureTime\": \"{{DEP_TIME}}\",\r\n                                        \"fareBasisCode\": \"{{FARE_BASIS_CODE}}\",\r\n                                        \"carrierCode\": \"{{CARRIER_CODE}}\",\r\n                                        \"flightNumber\": \"{{FLIGHT_NBR}}\",\r\n                                        \"arrivalTime\": \"{{ARR_TIME}}\",\r\n                                        \"couponNumber\": \"{{CPN_NBR}}\",\r\n                                        \"arrivalAirportCode\": \"{{ARR_AIRPORT}}\",\r\n                                        \"serviceClass\": \"{{SERVICE_CLASS}}\"\r\n                                    }\r\n                                ]\r\n                            },\r\n                            \"category\": \"{{CATEGORY}}\"\r\n                        }\r\n                    ],\r\n                    \"reference\": \"{{REFERENCE}}\",\r\n                    \"referenceType\": \"{{REFERENCE_TYPE}}\",\r\n                    \"referenceOwner\": \"{{REFERENCE_OWNER}}\"\r\n                }\r\n            ]\r\n        },\r\n        \"card\": {\r\n            \"vendorCode\": \"{{VENDOR_CODE}}\",\r\n            \"cardNumber\": \"{{CARD_NUMBER}}\",\r\n            \"cvv\": \"{{CARD_CVV}}\",\r\n            \"expiryDate\": \"{{CARD_EXP_DATE}}\"\r\n        },\r\n        \"method\": \"CARD\",\r\n        \"timestamp\": \"{{AUTHOR_TIMESTAMP}}\",\r\n        \"id\": \"{{ID}}\",\r\n        \"authorizationType\": \"{{AUTHORIZATION_TYPE}}\",\r\n        \"operationContext\": {\r\n            \"acquirerInformation\": {\r\n                \"acquirerCountry\": \"{{ACQUIRER_COUNTRY}}\",\r\n                \"acquirerBin\": \"{{ACQUIRER_BIN}}\"\r\n            },\r\n            \"merchantAccount\": {\r\n                \"name\": \"{{MERCHANT_NAME}}\",\r\n                \"login\": \"{{MERCHANT_LOGIN}}\",\r\n                \"password\": {\r\n                    \"payload\": \"{{MERCHANT_PWD}}\"\r\n                }\r\n            }    \r\n        },\r\n        \"amount\": {\r\n            \"value\": \"{{AMOUNT_VALUE_AUTH}}\",\r\n            \"currencyCode\": \"{{CURRENCY}}\"\r\n        }\r\n    }\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}",
+											"host": [
+												"{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}"
+											]
+										},
+										"description": "This request performs an authorization operation with the minimum fields plus the travel data that are optional."
+									},
+									"response": []
+								},
+								{
+									"name": "Author w/ cardholder details",
+									"request": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "{{CONTENT_TYPE}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n    \"data\": {\r\n        \"card\": {\r\n            \"vendorCode\": \"{{VENDOR_CODE}}\",\r\n            \"cardNumber\": \"{{CARD_NUMBER}}\",\r\n            \"cvv\": \"{{CARD_CVV}}\",\r\n            \"holderName\": \"{{HOLDER_NAME}}\",\r\n            \"expiryDate\": \"{{CARD_EXP_DATE}}\"\r\n        },\r\n        \"holder\": {\r\n            \"email\": \"{{HOLDER_EMAIL}}\",\r\n            \"billingAddress\":{\r\n                \"countryCode\":\"{{COUNTRY_CODE}}\",\r\n                \"cityName\":\"{{CITY_NAME}}\",\r\n                \"postalCode\":\"{{POSTAL_CODE}}\"\r\n            },\r\n            \"contacts\":{\r\n                \"phone\":{\r\n                    \"text\":\"{{HOLDER_PHONE_NUMBER}}\"\r\n                }\r\n            },\r\n            \"name\":{\r\n                \"lastName\":\"{{HOLDER_LAST_NAME}}\",\r\n                \"firstName\":\"{{HOLDER_FIRST_NAME}}\"\r\n            }\r\n        },\r\n        \"id\": \"{{ID}}\",\r\n        \"method\": \"CARD\",\r\n        \"timestamp\": \"{{AUTHOR_TIMESTAMP}}\",\r\n        \"authorizationType\": \"{{AUTHORIZATION_TYPE}}\",\r\n        \"operationContext\": {\r\n            \"acquirerInformation\": {\r\n                \"acquirerCountry\": \"{{ACQUIRER_COUNTRY}}\",\r\n                \"acquirerBin\": \"{{ACQUIRER_BIN}}\"\r\n            },\r\n            \"merchantAccount\": {\r\n                \"name\": \"{{MERCHANT_NAME}}\",\r\n                \"login\": \"{{MERCHANT_LOGIN}}\",\r\n                \"password\": {\r\n                    \"payload\": \"{{MERCHANT_PWD}}\"\r\n                }\r\n            }    \r\n        },\r\n        \"amount\": {\r\n            \"value\": \"{{AMOUNT_VALUE_AUTH}}\",\r\n            \"currencyCode\": \"{{CURRENCY}}\"\r\n        }\r\n    }\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}",
+											"host": [
+												"{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}"
+											]
+										},
+										"description": "This request performs an authorization operation with the minimum fields, plus card holder details that are optional"
+									},
+									"response": []
+								}
+							],
+							"description": "This folder contains requests with optional fields that Amadeus is likely to send"
+						},
+						{
+							"name": "3DS usecases",
+							"item": [
+								{
+									"name": "Author 3DS AMEX",
+									"event": [
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													""
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "{{CONTENT_TYPE}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n    \"data\": {\r\n        \"id\": \"{{ID}}\",\r\n        \"amount\": {\r\n            \"value\": \"{{AMOUNT_VALUE_AUTH}}\",\r\n            \"currencyCode\": \"{{CURRENCY}}\"\r\n        },\r\n        \"method\": \"CARD\",\r\n        \"timestamp\": \"{{AUTHOR_TIMESTAMP}}\",\r\n        \"card\": {\r\n            \"vendorCode\": \"{{VENDOR_CODE}}\",\r\n            \"cardNumber\": \"{{CARD_NUMBER}}\",\r\n            \"cvv\": \"{{CARD_CVV}}\",\r\n            \"expiryDate\": \"{{CARD_EXP_DATE}}\"\r\n        },\r\n        \"authorizationType\": \"{{AUTHORIZATION_TYPE}}\",\r\n        \"operationContext\": {\r\n            \"acquirerInformation\": {\r\n                \"acquirerCountry\": \"{{ACQUIRER_COUNTRY}}\",\r\n                \"acquirerBin\": \"{{ACQUIRER_BIN}}\"\r\n            },\r\n            \"merchantAccount\": {\r\n                \"name\": \"{{MERCHANT_NAME}}\",\r\n                \"login\": \"{{MERCHANT_LOGIN}}\",\r\n                \"password\": {\r\n                    \"payload\": \"{{MERCHANT_PWD}}\"\r\n                }\r\n            },\r\n            \"threeDomainSecure\": {\r\n                \"version\": \"{{3DS_VERSION}}\",\r\n                \"dsTransactionId\": \"{{3DS_TRANS_ID}}\",\r\n                \"eci\": \"{{3DS_ECI}}\",\r\n                \"transStatus\": \"{{3DS_TRANS_STATUS}}\",                                             \r\n                \"aevv\": \"{{3DS_AEVV}}\"\r\n            }  \r\n        }\r\n    }\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}",
+											"host": [
+												"{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}"
+											]
+										},
+										"description": "This request performs an authorization with 3DS information for an Amex credit card.\n\nSpecificities:\n\n- cavv field is replaced by aevv field"
+									},
+									"response": []
+								},
+								{
+									"name": "Author 3DS MASTERCARD",
+									"event": [
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													""
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "{{CONTENT_TYPE}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n    \"data\": {\r\n        \"id\": \"{{ID}}\",\r\n        \"amount\": {\r\n            \"value\": \"{{AMOUNT_VALUE_AUTH}}\",\r\n            \"currencyCode\": \"{{CURRENCY}}\"\r\n        },\r\n        \"method\": \"CARD\",\r\n        \"timestamp\": \"{{AUTHOR_TIMESTAMP}}\",\r\n        \"card\": {\r\n            \"vendorCode\": \"{{VENDOR_CODE}}\",\r\n            \"cardNumber\": \"{{CARD_NUMBER}}\",\r\n            \"cvv\": \"{{CARD_CVV}}\",\r\n            \"expiryDate\": \"{{CARD_EXP_DATE}}\"\r\n        },\r\n        \"authorizationType\": \"{{AUTHORIZATION_TYPE}}\",\r\n        \"operationContext\": {\r\n            \"acquirerInformation\": {\r\n                \"acquirerCountry\": \"{{ACQUIRER_COUNTRY}}\",\r\n                \"acquirerBin\": \"{{ACQUIRER_BIN}}\"\r\n            },\r\n            \"merchantAccount\": {\r\n                \"name\": \"{{MERCHANT_NAME}}\",\r\n                \"login\": \"{{MERCHANT_LOGIN}}\",\r\n                \"password\": {\r\n                    \"payload\": \"{{MERCHANT_PWD}}\"\r\n                }\r\n            },\r\n            \"threeDomainSecure\": {\r\n                \"version\": \"{{3DS_VERSION}}\",\r\n                \"dsTransactionId\": \"{{3DS_TRANS_ID}}\",\r\n                \"collectionIndicator\": \"{{3DS_COLLECTION_INDICATOR}}\",\r\n                \"transStatus\": \"{{3DS_TRANS_STATUS}}\",                                             \r\n                \"aav\": \"{{3DS_AAV}}\"\r\n            }  \r\n        }\r\n    }\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}",
+											"host": [
+												"{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}"
+											]
+										},
+										"description": "This request performs an authorization with 3DS information for a Mastercard credit card.\n\nSpecificities:\n\n- cavv field is replaced by aav field\n    \n- eci field is replaced by collectionIndicator"
+									},
+									"response": []
+								},
+								{
+									"name": "Author 3DS",
+									"event": [
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													""
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "{{CONTENT_TYPE}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n    \"data\": {\r\n        \"id\": \"{{ID}}\",\r\n        \"amount\": {\r\n            \"value\": \"{{AMOUNT_VALUE_AUTH}}\",\r\n            \"currencyCode\": \"{{CURRENCY}}\"\r\n        },\r\n        \"method\": \"CARD\",\r\n        \"timestamp\": \"{{AUTHOR_TIMESTAMP}}\",\r\n        \"card\": {\r\n            \"vendorCode\": \"{{VENDOR_CODE}}\",\r\n            \"cardNumber\": \"{{CARD_NUMBER}}\",\r\n            \"cvv\": \"{{CARD_CVV}}\",\r\n            \"expiryDate\": \"{{CARD_EXP_DATE}}\"\r\n        },\r\n        \"authorizationType\": \"{{AUTHORIZATION_TYPE}}\",\r\n        \"operationContext\": {\r\n            \"acquirerInformation\": {\r\n                \"acquirerCountry\": \"{{ACQUIRER_COUNTRY}}\",\r\n                \"acquirerBin\": \"{{ACQUIRER_BIN}}\"\r\n            },\r\n            \"merchantAccount\": {\r\n                \"name\": \"{{MERCHANT_NAME}}\",\r\n                \"login\": \"{{MERCHANT_LOGIN}}\",\r\n                \"password\": {\r\n                    \"payload\": \"{{MERCHANT_PWD}}\"\r\n                }\r\n            },\r\n            \"threeDomainSecure\": {\r\n                \"version\": \"{{3DS_VERSION}}\",\r\n                \"dsTransactionId\": \"{{3DS_TRANS_ID}}\",\r\n                \"eci\": \"{{3DS_ECI}}\",\r\n                \"transStatus\": \"{{3DS_TRANS_STATUS}}\",                                             \r\n                \"cavv\": \"{{3DS_CAVV}}\"\r\n            }  \r\n        }\r\n    }\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}",
+											"host": [
+												"{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}"
+											]
+										},
+										"description": "This request performs an authorization with 3DS information for all other vendors."
+									},
+									"response": []
+								}
+							],
+							"description": "The requests inside this folder send the necessary information to perform an authorization with 3DS information.\n\nPlease note that some vendors have some specificities when dealing with 3ds data, and so, dedicated usecases:\n\n- Mastercard\n    \n- American Express"
+						},
+						{
+							"name": "Full usecases",
+							"item": [
+								{
+									"name": "Author 3DS + flight data",
+									"request": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "{{CONTENT_TYPE}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n    \"data\": {\r\n        \"id\": \"{{ID}}\",\r\n        \"purposeOfOperation\": {\r\n            \"sales\": [\r\n                {\r\n                    \"salesItems\": [\r\n                        {\r\n                            \"category\": \"{{CATEGORY}}\",\r\n                            \"flightSalesDetails\": {\r\n                                \"passenger\": {\r\n                                    \"name\": {\r\n                                        \"firstName\": \"{{PASS_FNAME}}\",\r\n                                        \"lastName\": \"{{PASS_LNAME}}\"\r\n                                    },\r\n                                    \"flightPassengerType\": \"{{PASS_TYPE}}\"\r\n                                },\r\n                                \"flightLegs\": [\r\n                                    {\r\n                                        \"departureAirportCode\": \"{{DEP_AIRPORT}}\",\r\n                                        \"travelDate\":\"{{TRAVEL_DATE}}\",\r\n                                        \"departureTime\": \"{{DEP_TIME}}\",\r\n                                        \"fareBasisCode\": \"{{FARE_BASIS_CODE}}\",\r\n                                        \"carrierCode\": \"{{CARRIER_CODE}}\",\r\n                                        \"flightNumber\": \"{{FLIGHT_NBR}}\",\r\n                                        \"serviceClass\": \"{{SERVICE_CLASS}}\",\r\n                                        \"arrivalTime\": \"{{ARR_TIME}}\",\r\n                                        \"couponNumber\": \"{{CPN_NBR}}\",\r\n                                        \"arrivalAirportCode\": \"{{ARR_AIRPORT}}\"\r\n                                        \r\n                                    }\r\n                                ]\r\n                            }\r\n                        }\r\n                    ],\r\n                    \"referenceOwner\": \"{{REFERENCE_OWNER}}\",\r\n                    \"reference\": \"{{REFERENCE}}\",\r\n                    \"referenceType\": \"{{REFERENCE_TYPE}}\"\r\n                }\r\n            ]\r\n        },\r\n        \"card\": {\r\n            \"cvv\": \"{{CARD_CVV}}\",\r\n            \"holder\": {\r\n                \"email\": \"{{HOLDER_EMAIL}}\",\r\n                \"billingAddress\":{\r\n                    \"countryCode\":\"{{COUNTRY_CODE}}\",\r\n                    \"cityName\":\"{{CITY_NAME}}\",\r\n                    \"postalCode\":\"{{POSTAL_CODE}}\"\r\n                },\r\n                \"contacts\":{\r\n                    \"phone\":{\r\n                        \"text\":\"{{HOLDER_PHONE_NUMBER}}\"\r\n                    }\r\n                }\r\n            },\r\n            \"holderName\": \"{{HOLDER_NAME}}\",\r\n            \"vendorCode\": \"{{VENDOR_CODE}}\",\r\n            \"expiryDate\": \"{{CARD_EXP_DATE}}\",\r\n            \"cardNumber\": \"{{CARD_NUMBER}}\"            \r\n        },\r\n        \"method\": \"CARD\",\r\n        \"timestamp\": \"{{AUTHOR_TIMESTAMP}}\",\r\n        \"authorizationType\": \"{{AUTHORIZATION_TYPE}}\",\r\n        \"operationContext\": {\r\n            \"acquirerInformation\": {\r\n                \"acquirerCountry\": \"{{ACQUIRER_COUNTRY}}\",\r\n                \"acquirerBin\": \"{{ACQUIRER_BIN}}\"\r\n            },\r\n            \"threeDomainSecure\": {\r\n                \"version\": \"{{3DS_VERSION}}\",\r\n                \"dsTransactionId\": \"{{3DS_TRANS_ID}}\",\r\n                \"eci\": \"{{3DS_ECI}}\",\r\n                \"transStatus\": \"{{3DS_TRANS_STATUS}}\",                                             \r\n                \"cavv\": \"{{3DS_CAVV}}\"\r\n            },\r\n            \"merchantAccount\": {\r\n                \"name\": \"{{MERCHANT_NAME}}\",\r\n                \"login\": \"{{MERCHANT_LOGIN}}\",\r\n                \"password\": {\r\n                    \"payload\": \"{{MERCHANT_PWD}}\"\r\n                }\r\n            }    \r\n        },\r\n        \"amount\": {\r\n            \"value\": \"{{AMOUNT_VALUE_AUTH}}\",\r\n            \"currencyCode\": \"{{CURRENCY}}\"\r\n        }\r\n    }\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}",
+											"host": [
+												"{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}"
+											]
+										},
+										"description": "This request performs an authorization operation with 3ds data for any vendor except Mastercard and AMEX, flight data, and card holder details."
+									},
+									"response": []
+								},
+								{
+									"name": "Author 3DS + flight data (MAST)",
+									"request": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "{{CONTENT_TYPE}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n    \"data\": {\r\n        \"id\": \"{{ID}}\",\r\n        \"purposeOfOperation\": {\r\n            \"sales\": [\r\n                {\r\n                    \"salesItems\": [\r\n                        {\r\n                            \"category\": \"{{CATEGORY}}\",\r\n                            \"flightSalesDetails\": {\r\n                                \"passenger\": {\r\n                                    \"name\": {\r\n                                        \"firstName\": \"{{PASS_FNAME}}\",\r\n                                        \"lastName\": \"{{PASS_LNAME}}\"\r\n                                    },\r\n                                    \"flightPassengerType\": \"{{PASS_TYPE}}\"\r\n                                },\r\n                                \"flightLegs\": [\r\n                                    {\r\n                                        \"departureAirportCode\": \"{{DEP_AIRPORT}}\",\r\n                                        \"travelDate\":\"{{TRAVEL_DATE}}\",\r\n                                        \"departureTime\": \"{{DEP_TIME}}\",\r\n                                        \"fareBasisCode\": \"{{FARE_BASIS_CODE}}\",\r\n                                        \"carrierCode\": \"{{CARRIER_CODE}}\",\r\n                                        \"flightNumber\": \"{{FLIGHT_NBR}}\",\r\n                                        \"serviceClass\": \"{{SERVICE_CLASS}}\",\r\n                                        \"arrivalTime\": \"{{ARR_TIME}}\",\r\n                                        \"couponNumber\": \"{{CPN_NBR}}\",\r\n                                        \"arrivalAirportCode\": \"{{ARR_AIRPORT}}\"\r\n                                        \r\n                                    }\r\n                                ]\r\n                            }\r\n                        }\r\n                    ],\r\n                    \"referenceOwner\": \"{{REFERENCE_OWNER}}\",\r\n                    \"reference\": \"{{REFERENCE}}\",\r\n                    \"referenceType\": \"{{REFERENCE_TYPE}}\"\r\n                }\r\n            ]\r\n        },\r\n        \"card\": {\r\n            \"cvv\": \"{{CARD_CVV}}\",\r\n            \"holder\": {\r\n                \"email\": \"{{HOLDER_EMAIL}}\",\r\n                \"billingAddress\":{\r\n                    \"countryCode\":\"{{COUNTRY_CODE}}\",\r\n                    \"cityName\":\"{{CITY_NAME}}\",\r\n                    \"postalCode\":\"{{POSTAL_CODE}}\"\r\n                },\r\n                \"contacts\":{\r\n                    \"phone\":{\r\n                        \"text\":\"{{HOLDER_PHONE_NUMBER}}\"\r\n                    }\r\n                }\r\n            },\r\n            \"holderName\": \"{{HOLDER_NAME}}\",\r\n            \"vendorCode\": \"{{VENDOR_CODE}}\",\r\n            \"expiryDate\": \"{{CARD_EXP_DATE}}\",\r\n            \"cardNumber\": \"{{CARD_NUMBER}}\"            \r\n        },\r\n        \"method\": \"CARD\",\r\n        \"timestamp\": \"{{AUTHOR_TIMESTAMP}}\",\r\n        \"authorizationType\": \"{{AUTHORIZATION_TYPE}}\",\r\n        \"operationContext\": {\r\n            \"acquirerInformation\": {\r\n                \"acquirerCountry\": \"{{ACQUIRER_COUNTRY}}\",\r\n                \"acquirerBin\": \"{{ACQUIRER_BIN}}\"\r\n            },\r\n            \"threeDomainSecure\": {\r\n                \"version\": \"{{3DS_VERSION}}\",\r\n                \"dsTransactionId\": \"{{3DS_TRANS_ID}}\",\r\n                \"collectionIndicator\": \"{{3DS_COLLECTION_INDICATOR}}\",\r\n                \"transStatus\": \"{{3DS_TRANS_STATUS}}\",                                             \r\n                \"aav\": \"{{3DS_AAV}}\"\r\n            },\r\n            \"merchantAccount\": {\r\n                \"name\": \"{{MERCHANT_NAME}}\",\r\n                \"login\": \"{{MERCHANT_LOGIN}}\",\r\n                \"password\": {\r\n                    \"payload\": \"{{MERCHANT_PWD}}\"\r\n                }\r\n            }    \r\n        },\r\n        \"amount\": {\r\n            \"value\": \"{{AMOUNT_VALUE_AUTH}}\",\r\n            \"currencyCode\": \"{{CURRENCY}}\"\r\n        }\r\n    }\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}",
+											"host": [
+												"{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}"
+											]
+										},
+										"description": "This request performs an authorization operation with 3ds data for Mastercard, flight data, and card holder details."
+									},
+									"response": []
+								},
+								{
+									"name": "Author 3DS + flight data (AMEX)",
+									"request": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "{{CONTENT_TYPE}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n    \"data\": {\r\n        \"id\": \"{{ID}}\",\r\n        \"purposeOfOperation\": {\r\n            \"sales\": [\r\n                {\r\n                    \"salesItems\": [\r\n                        {\r\n                            \"category\": \"{{CATEGORY}}\",\r\n                            \"flightSalesDetails\": {\r\n                                \"passenger\": {\r\n                                    \"name\": {\r\n                                        \"firstName\": \"{{PASS_FNAME}}\",\r\n                                        \"lastName\": \"{{PASS_LNAME}}\"\r\n                                    },\r\n                                    \"flightPassengerType\": \"{{PASS_TYPE}}\"\r\n                                },\r\n                                \"flightLegs\": [\r\n                                    {\r\n                                        \"departureAirportCode\": \"{{DEP_AIRPORT}}\",\r\n                                        \"travelDate\":\"{{TRAVEL_DATE}}\",\r\n                                        \"departureTime\": \"{{DEP_TIME}}\",\r\n                                        \"fareBasisCode\": \"{{FARE_BASIS_CODE}}\",\r\n                                        \"carrierCode\": \"{{CARRIER_CODE}}\",\r\n                                        \"flightNumber\": \"{{FLIGHT_NBR}}\",\r\n                                        \"serviceClass\": \"{{SERVICE_CLASS}}\",\r\n                                        \"arrivalTime\": \"{{ARR_TIME}}\",\r\n                                        \"couponNumber\": \"{{CPN_NBR}}\",\r\n                                        \"arrivalAirportCode\": \"{{ARR_AIRPORT}}\"\r\n                                        \r\n                                    }\r\n                                ]\r\n                            }\r\n                        }\r\n                    ],\r\n                    \"referenceOwner\": \"{{REFERENCE_OWNER}}\",\r\n                    \"reference\": \"{{REFERENCE}}\",\r\n                    \"referenceType\": \"{{REFERENCE_TYPE}}\"\r\n                }\r\n            ]\r\n        },\r\n        \"card\": {\r\n            \"cvv\": \"{{CARD_CVV}}\",\r\n            \"holder\": {\r\n                \"email\": \"{{HOLDER_EMAIL}}\",\r\n                \"billingAddress\":{\r\n                    \"countryCode\":\"{{COUNTRY_CODE}}\",\r\n                    \"cityName\":\"{{CITY_NAME}}\",\r\n                    \"postalCode\":\"{{POSTAL_CODE}}\"\r\n                },\r\n                \"contacts\":{\r\n                    \"phone\":{\r\n                        \"text\":\"{{HOLDER_PHONE_NUMBER}}\"\r\n                    }\r\n                }\r\n            },\r\n            \"holderName\": \"{{HOLDER_NAME}}\",\r\n            \"vendorCode\": \"{{VENDOR_CODE}}\",\r\n            \"expiryDate\": \"{{CARD_EXP_DATE}}\",\r\n            \"cardNumber\": \"{{CARD_NUMBER}}\"            \r\n        },\r\n        \"method\": \"CARD\",\r\n        \"timestamp\": \"{{AUTHOR_TIMESTAMP}}\",\r\n        \"authorizationType\": \"{{AUTHORIZATION_TYPE}}\",\r\n        \"operationContext\": {\r\n            \"acquirerInformation\": {\r\n                \"acquirerCountry\": \"{{ACQUIRER_COUNTRY}}\",\r\n                \"acquirerBin\": \"{{ACQUIRER_BIN}}\"\r\n            },\r\n            \"threeDomainSecure\": {\r\n                \"version\": \"{{3DS_VERSION}}\",\r\n                \"dsTransactionId\": \"{{3DS_TRANS_ID}}\",\r\n                \"eci\": \"{{3DS_ECI}}\",\r\n                \"transStatus\": \"{{3DS_TRANS_STATUS}}\",                                             \r\n                \"aevv\": \"{{3DS_AEVV}}\"\r\n            },\r\n            \"merchantAccount\": {\r\n                \"name\": \"{{MERCHANT_NAME}}\",\r\n                \"login\": \"{{MERCHANT_LOGIN}}\",\r\n                \"password\": {\r\n                    \"payload\": \"{{MERCHANT_PWD}}\"\r\n                }\r\n            }    \r\n        },\r\n        \"amount\": {\r\n            \"value\": \"{{AMOUNT_VALUE_AUTH}}\",\r\n            \"currencyCode\": \"{{CURRENCY}}\"\r\n        }\r\n    }\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}",
+											"host": [
+												"{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}"
+											]
+										},
+										"description": "This request performs an authorization operation with 3ds data for American express, flight data, and card holder details."
+									},
+									"response": []
+								}
+							],
+							"description": "The requests in this folder are a combination of all optional fields"
+						},
+						{
+							"name": "Author simple request",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "{{CONTENT_TYPE}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"data\": {\r\n        \"card\": {\r\n            \"vendorCode\": \"{{VENDOR_CODE}}\",\r\n            \"cardNumber\": \"{{CARD_NUMBER}}\",\r\n            \"cvv\": \"{{CARD_CVV}}\",\r\n            \"expiryDate\": \"{{CARD_EXP_DATE}}\"\r\n        },\r\n        \"id\": \"{{ID}}\",\r\n        \"method\": \"CARD\",\r\n        \"timestamp\": \"{{AUTHOR_TIMESTAMP}}\",\r\n        \"authorizationType\": \"{{AUTHORIZATION_TYPE}}\",\r\n        \"operationContext\": {\r\n            \"acquirerInformation\": {\r\n                \"acquirerCountry\": \"{{ACQUIRER_COUNTRY}}\",\r\n                \"acquirerBin\": \"{{ACQUIRER_BIN}}\"\r\n            },\r\n            \"merchantAccount\": {\r\n                \"name\": \"{{MERCHANT_NAME}}\",\r\n                \"login\": \"{{MERCHANT_LOGIN}}\",\r\n                \"password\": {\r\n                    \"payload\": \"{{MERCHANT_PWD}}\"\r\n                }\r\n            }    \r\n        },\r\n        \"amount\": {\r\n            \"value\": \"{{AMOUNT_VALUE_AUTH}}\",\r\n            \"currencyCode\": \"{{CURRENCY}}\"\r\n        }\r\n    }\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}",
+									"host": [
+										"{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}"
+									]
+								},
+								"description": "This request performs an authorization operation with the minimum fields."
+							},
+							"response": [
+								{
+									"name": "201 success",
+									"originalRequest": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/vnd.amadeus+json",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n    \"data\": {\r\n        \"card\": {\r\n            \"vendorCode\": \"VI\",\r\n            \"cardNumber\": \"\",\r\n            \"cvv\": \"\",\r\n            \"expiryDate\": \"\"\r\n        },\r\n        \"id\": \"\",\r\n        \"pspReconciliationReference\": \"1234567\",\r\n        \"method\": \"CARD\",\r\n        \"timestamp\": \"2024-08-01T09:46:06Z\",\r\n        \"authorizationType\": \"AUTHORIZATION_ONLY\",\r\n        \"operationContext\": {\r\n            \"acquirerInformation\": {\r\n                \"acquirerCountry\": \"FR\",\r\n                \"acquirerBin\": \"123456789\"\r\n            },\r\n            \"merchantAccount\": {\r\n                \"name\": \"merchantName\",\r\n                \"login\": \"merchantLogin\",\r\n                \"password\": {\r\n                    \"payload\": \"merchantPwd\"\r\n                }\r\n            }    \r\n        },\r\n        \"amount\": {\r\n            \"value\": \"5\",\r\n            \"currencyCode\": \"EUR\"\r\n        }\r\n    }\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "https://sandbox.pci-proxy.com/v1/push/a362b4ca5ccf61fb/outpayce/v1/authorizations/3aaccc64-bfe4-41f8-bfd6-5e80bafb92e6",
+											"protocol": "https",
+											"host": [
+												"sandbox",
+												"pci-proxy",
+												"com"
+											],
+											"path": [
+												"v1",
+												"push",
+												"a362b4ca5ccf61fb",
+												"outpayce",
+												"v1",
+												"authorizations",
+												"3aaccc64-bfe4-41f8-bfd6-5e80bafb92e6"
+											]
+										}
+									},
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json",
+											"name": "Content-Type",
+											"description": "",
+											"type": "text"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"data\": {\n        \"id\": \"a31b32c3-24d5-6e7f-978g-hi9j950k1l2\",\n        \"timestamp\": \"2023-08-02T09:46:06Z\",\n        \"method\": \"CARD\",\n        \"card\": {\n            \"vendorCode\": \"VI\",\n            \"maskedCardNumber\": \"411111******1111\"\n        },\n        \"approvalCode\": \"123456\"\n    }\n}"
+								},
+								{
+									"name": "400 bad request",
+									"originalRequest": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "{{CONTENT_TYPE}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n    \"data\": {\r\n        \"card\": {\r\n            \"vendorCode\": \"{{VENDOR_CODE}}\",\r\n            \"cardNumber\": \"{{CARD_NUMBER}}\",\r\n            \"cvv\": \"{{CARD_CVV}}\",\r\n            \"expiryDate\": \"{{CARD_EXP_DATE}}\"\r\n        },\r\n        \"id\": \"{{ID}}\",\r\n        \"pspReconciliationReference\": \"{{PSP_RECONCILIATION_REFERENCE}}\",\r\n        \"method\": \"CARD\",\r\n        \"timestamp\": \"{{AUTHOR_TIMESTAMP}}\",\r\n        \"authorizationType\": \"{{AUTHORIZATION_TYPE}}\",\r\n        \"operationContext\": {\r\n            \"acquirerInformation\": {\r\n                \"acquirerCountry\": \"{{ACQUIRER_COUNTRY}}\",\r\n                \"acquirerBin\": \"{{ACQUIRER_BIN}}\"\r\n            },\r\n            \"merchantAccount\": {\r\n                \"name\": \"{{MERCHANT_NAME}}\",\r\n                \"login\": \"{{MERCHANT_LOGIN}}\",\r\n                \"password\": {\r\n                    \"payload\": \"{{MERCHANT_PWD}}\"\r\n                }\r\n            }    \r\n        },\r\n        \"amount\": {\r\n            \"value\": \"{{AMOUNT_VALUE_AUTH}}\",\r\n            \"currencyCode\": \"{{CURRENCY}}\"\r\n        }\r\n    }\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}",
+											"host": [
+												"{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}"
+											]
+										}
+									},
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json",
+											"name": "Content-Type",
+											"description": "",
+											"type": "text"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"errors\": [\n        {\n            \"status\": 400,\n            \"code\": 33460,\n            \"title\": \"MISSING REQUIRED INPUT PARAM(S) - PLEASE ADJUST REQUEST\",\n            \"details\": \"error description\",\n            \"source\": {\n                \"parameter\": \"#data/operationContext/merchantAccount/name\"\n            }\n        }\n    ]\n}"
+								},
+								{
+									"name": "424 failed dependency",
+									"originalRequest": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "{{CONTENT_TYPE}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n    \"data\": {\r\n        \"card\": {\r\n            \"vendorCode\": \"{{VENDOR_CODE}}\",\r\n            \"cardNumber\": \"{{CARD_NUMBER}}\",\r\n            \"cvv\": \"{{CARD_CVV}}\",\r\n            \"expiryDate\": \"{{CARD_EXP_DATE}}\"\r\n        },\r\n        \"id\": \"{{ID}}\",\r\n        \"pspReconciliationReference\": \"{{PSP_RECONCILIATION_REFERENCE}}\",\r\n        \"method\": \"CARD\",\r\n        \"timestamp\": \"{{AUTHOR_TIMESTAMP}}\",\r\n        \"authorizationType\": \"{{AUTHORIZATION_TYPE}}\",\r\n        \"operationContext\": {\r\n            \"acquirerInformation\": {\r\n                \"acquirerCountry\": \"{{ACQUIRER_COUNTRY}}\",\r\n                \"acquirerBin\": \"{{ACQUIRER_BIN}}\"\r\n            },\r\n            \"merchantAccount\": {\r\n                \"name\": \"{{MERCHANT_NAME}}\",\r\n                \"login\": \"{{MERCHANT_LOGIN}}\",\r\n                \"password\": {\r\n                    \"payload\": \"{{MERCHANT_PWD}}\"\r\n                }\r\n            }    \r\n        },\r\n        \"amount\": {\r\n            \"value\": \"{{AMOUNT_VALUE_AUTH}}\",\r\n            \"currencyCode\": \"{{CURRENCY}}\"\r\n        }\r\n    }\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}",
+											"host": [
+												"{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}"
+											]
+										}
+									},
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json",
+											"name": "Content-Type",
+											"description": "",
+											"type": "text"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"errors\": [\n        {\n            \"status\": 424,\n            \"code\": 12550,\n            \"title\": \"AUTHORISATION DENIED INSUFFICIENT FUNDS\"\n        }\n    ]\n}"
+								}
+							]
+						}
+					],
+					"description": "An _Authorization_ is usually the first transaction performed during the acceptance stage of a payment, it means an agreement on some money to be exchanged between two parties_._\n\nTwo different authorization flows can be triggered depending on the value of the \"AUTHORIZATION_TYPE\" variable, you have to edit the environment and choose between:\n\n- \"AUTHOR_AND_CAPTURE\": Authorization simultaneously followed by a capture also called 1 step because the payment transaction is done at once\n- \"AUTHORIZATION_ONLY\": Authorization only, not followed by a capture, also called 2 step because the payment transaction is done in two times",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"postman.setEnvironmentVariable('REQUEST_TYPE', '/outpayce/v1/authorizations/');"
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"",
+									"var jsonData = null;",
+									"try {",
+									"    // TEST BODY CONTENT and VALUES",
+									"    jsonData = pm.response.json().data;",
+									"",
+									"    // get request body param values",
+									"    const bodyRequestData = JSON.parse(pm.request.body).data;",
+									"",
+									"    // SAVING ID FOR NEXT OPERATIONS",
+									"    pm.environment.set(\"PARENT_OPERATION_ID\", jsonData.id);",
+									"",
+									"    // SAVING APPROVAL CODE FOR NEXT OPERATIONS",
+									"    pm.environment.set(\"APPROVAL_CODE\", jsonData.approvalCode);",
+									"    ",
+									"    // TEST APPROVAL CODE",
+									"    pm.test(\"ApprovalCode\", function(){",
+									"    pm.expect(jsonData.approvalCode).to.match(/\\d{6,8}/);",
+									"    pm.expect(jsonData.approvalCode.length >= 6 && jsonData.approvalCode.length <= 8).to.be.true;",
+									"    });",
+									"",
+									"    // TEST VENDOR CODE",
+									"     pm.test(\"Vendor code\", function(){",
+									"        pm.expect(jsonData.card.vendorCode).to.eql(bodyRequestData.card.vendorCode);",
+									"    });",
+									"",
+									"    // TEST CVV",
+									"    if (jsonData.cvv !== undefined) {",
+									"        pm.test(\"Cvv\", function(){",
+									"            pm.expect(jsonData.card.cvv).to.eql(bodyRequestData.card.cvv);",
+									"        });",
+									"    } else {",
+									"    };",
+									"",
+									"    // TEST EXPIRY DATE",
+									"    if (jsonData.card.expiryDate !== undefined) {",
+									"        pm.test(\"ExpiryDate\", function(){",
+									"            pm.expect(jsonData.card.expiryDate).to.eql(bodyRequestData.card.expiryDate);",
+									"        });",
+									"    } else {",
+									"    };",
+									"    ",
+									"} catch(error)",
+									"{}",
+									""
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Reversal",
+					"item": [
+						{
+							"name": "Multiple/partial Reversal",
+							"item": [
+								{
+									"name": "1st Partial Reversal",
+									"event": [
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													"// SAVING ID FOR NEXT OPERATIONS\r",
+													"    const id = pm.environment.get(\"PARENT_OPERATION_ID\");\r",
+													"    pm.environment.set(\"PARENT_OPERATION_ID_PARTIAL\", id);\r",
+													"\r",
+													"// SETTING PARTIAL REVERSAL AMOUNT\r",
+													"    const amount_partial_rev = pm.environment.get(\"AMOUNT_VALUE_AUTH\") / 2;\r",
+													"    pm.environment.set(\"AMOUNT_VALUE_REV\", amount_partial_rev);"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "{{CONTENT_TYPE}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n    \"data\": {\r\n        \"parentOperationId\": \"{{PARENT_OPERATION_ID}}\",\r\n        \"card\": {\r\n            \"vendorCode\": \"{{VENDOR_CODE}}\",\r\n            \"expiryDate\": \"{{CARD_EXP_DATE}}\",\r\n            \"cardNumber\": \"{{CARD_NUMBER}}\"\r\n        },\r\n        \"timestamp\": \"{{REVERSAL_TIMESTAMP}}\",\r\n        \"id\": \"{{ID}}\",\r\n        \"method\": \"CARD\",\r\n        \"approvalCode\":\"{{APPROVAL_CODE}}\",\r\n        \"operationContext\": {\r\n            \"acquirerInformation\": {\r\n                \"acquirerCountry\": \"{{ACQUIRER_COUNTRY}}\",\r\n                \"acquirerBin\": \"{{ACQUIRER_BIN}}\"\r\n            },\r\n            \"merchantAccount\": {\r\n                \"name\": \"{{MERCHANT_NAME}}\",\r\n                \"login\": \"{{MERCHANT_LOGIN}}\",\r\n                \"password\": {\r\n                    \"payload\": \"{{MERCHANT_PWD}}\"\r\n                }\r\n            }    \r\n        },\r\n        \"amount\": {\r\n            \"value\": \"{{AMOUNT_VALUE_REV}}\",\r\n            \"currencyCode\": \"{{CURRENCY}}\"\r\n        }\r\n    }\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}",
+											"host": [
+												"{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}"
+											]
+										},
+										"description": "This request performs a reversal operation with the minimum fields."
+									},
+									"response": []
+								},
+								{
+									"name": "2nd Partial Reversal",
+									"request": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "{{CONTENT_TYPE}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n    \"data\": {\r\n        \"parentOperationId\": \"{{PARENT_OPERATION_ID}}\",\r\n        \"card\": {\r\n            \"vendorCode\": \"{{VENDOR_CODE}}\",\r\n            \"expiryDate\": \"{{CARD_EXP_DATE}}\",\r\n            \"cardNumber\": \"{{CARD_NUMBER}}\"\r\n        },\r\n        \"timestamp\": \"{{REVERSAL_TIMESTAMP}}\",\r\n        \"id\": \"{{ID}}\",\r\n        \"method\": \"CARD\",\r\n        \"approvalCode\":\"{{APPROVAL_CODE}}\",\r\n        \"operationContext\": {\r\n            \"acquirerInformation\": {\r\n                \"acquirerCountry\": \"{{ACQUIRER_COUNTRY}}\",\r\n                \"acquirerBin\": \"{{ACQUIRER_BIN}}\"\r\n            },\r\n            \"merchantAccount\": {\r\n                \"name\": \"{{MERCHANT_NAME}}\",\r\n                \"login\": \"{{MERCHANT_LOGIN}}\",\r\n                \"password\": {\r\n                    \"payload\": \"{{MERCHANT_PWD}}\"\r\n                }\r\n            }    \r\n        },\r\n        \"amount\": {\r\n            \"value\": \"{{AMOUNT_VALUE_REV}}\",\r\n            \"currencyCode\": \"{{CURRENCY}}\"\r\n        }\r\n    }\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}",
+											"host": [
+												"{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}"
+											]
+										},
+										"description": "This request performs a reversal operation with the minimum fields."
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "Reversal simple request",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "{{CONTENT_TYPE}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"data\": {\r\n        \"parentOperationId\": \"{{PARENT_OPERATION_ID}}\",\r\n        \"card\": {\r\n            \"vendorCode\": \"{{VENDOR_CODE}}\",\r\n            \"expiryDate\": \"{{CARD_EXP_DATE}}\",\r\n            \"cardNumber\": \"{{CARD_NUMBER}}\"\r\n        },\r\n        \"timestamp\": \"{{REVERSAL_TIMESTAMP}}\",\r\n        \"id\": \"{{ID}}\",\r\n        \"method\": \"CARD\",\r\n        \"approvalCode\":\"{{APPROVAL_CODE}}\",\r\n        \"operationContext\": {\r\n            \"acquirerInformation\": {\r\n                \"acquirerCountry\": \"{{ACQUIRER_COUNTRY}}\",\r\n                \"acquirerBin\": \"{{ACQUIRER_BIN}}\"\r\n            },\r\n            \"merchantAccount\": {\r\n                \"name\": \"{{MERCHANT_NAME}}\",\r\n                \"login\": \"{{MERCHANT_LOGIN}}\",\r\n                \"password\": {\r\n                    \"payload\": \"{{MERCHANT_PWD}}\"\r\n                }\r\n            }    \r\n        },\r\n        \"amount\": {\r\n            \"value\": \"{{AMOUNT_VALUE_REV}}\",\r\n            \"currencyCode\": \"{{CURRENCY}}\"\r\n        }\r\n    }\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}",
+									"host": [
+										"{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}"
+									]
+								},
+								"description": "This request performs a reversal operation with the minimum fields."
+							},
+							"response": [
+								{
+									"name": "201 success",
+									"originalRequest": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/vnd.amadeus+json",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n    \"data\": {\r\n        \"parentOperationId\": \"\",\r\n        \"card\": {\r\n            \"vendorCode\": \"VI\",\r\n            \"expiryDate\": \"\",\r\n            \"cardNumber\": \"\"\r\n        },\r\n        \"timestamp\": \"2024-08-02T09:46:06Z\",\r\n        \"id\": \"\",\r\n        \"approvalCode\":\"123456\",\r\n        \"operationContext\": {\r\n            \"acquirerInformation\": {\r\n                \"acquirerCountry\": \"FR\",\r\n                \"acquirerBin\": \"123456789\"\r\n            },\r\n            \"merchantAccount\": {\r\n                \"name\": \"merchantName\",\r\n                \"login\": \"merchantLogin\",\r\n                \"password\": {\r\n                    \"payload\": \"merchantPwd\"\r\n                }\r\n            }    \r\n        },\r\n        \"amount\": {\r\n            \"value\": \"5\",\r\n            \"currencyCode\": \"EUR\"\r\n        }\r\n    }\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "/outpayce/v1/authorizations/",
+											"path": [
+												"outpayce",
+												"v1",
+												"authorizations",
+												""
+											]
+										}
+									},
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json",
+											"name": "Content-Type",
+											"description": "",
+											"type": "text"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"data\": {\n        \"id\": \"a31b32c3-24d5-6e7f-978g-hi9j950k1l2\",\n        \"parentOperationId\": \"b31b32c3-24d5-6e7f-978g-hi9j950k1l2\",\n        \"timestamp\": \"2023-08-02T09:46:06Z\",\n        \"method\": \"CARD\",\n        \"card\": {\n            \"vendorCode\": \"VI\",\n            \"maskedCardNumber\": \"411111******1111\"\n        },\n        \"approvalCode\": \"123456\"\n    }\n}"
+								},
+								{
+									"name": "400 bad request",
+									"originalRequest": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "{{CONTENT_TYPE}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n    \"data\": {\r\n        \"parentOperationId\": \"{{PARENT_OPERATION_ID}}\",\r\n        \"card\": {\r\n            \"vendorCode\": \"{{VENDOR_CODE}}\",\r\n            \"expiryDate\": \"{{CARD_EXP_DATE}}\",\r\n            \"cardNumber\": \"{{CARD_NUMBER}}\"\r\n        },\r\n        \"timestamp\": \"{{REVERSAL_TIMESTAMP}}\",\r\n        \"id\": \"{{ID}}\",\r\n        \"approvalCode\":\"{{APPROVAL_CODE}}\",\r\n        \"operationContext\": {\r\n            \"acquirerInformation\": {\r\n                \"acquirerCountry\": \"{{ACQUIRER_COUNTRY}}\",\r\n                \"acquirerBin\": \"{{ACQUIRER_BIN}}\"\r\n            },\r\n            \"merchantAccount\": {\r\n                \"name\": \"{{MERCHANT_NAME}}\",\r\n                \"login\": \"{{MERCHANT_LOGIN}}\",\r\n                \"password\": {\r\n                    \"payload\": \"{{MERCHANT_PWD}}\"\r\n                }\r\n            }    \r\n        },\r\n        \"amount\": {\r\n            \"value\": \"{{AMOUNT_VALUE_REV}}\",\r\n            \"currencyCode\": \"{{CURRENCY}}\"\r\n        }\r\n    }\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}",
+											"host": [
+												"{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}"
+											]
+										}
+									},
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json",
+											"name": "Content-Type",
+											"description": "",
+											"type": "text"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"errors\": [\n        {\n            \"status\": 400,\n            \"code\": 33460,\n            \"title\": \"MISSING REQUIRED INPUT PARAM(S) - PLEASE ADJUST REQUEST\",\n            \"details\": \"error description\",\n            \"source\": {\n                \"parameter\": \"#data/operationContext/merchantAccount/name\"\n            }\n        }\n    ]\n}"
+								},
+								{
+									"name": "409 conflict",
+									"originalRequest": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "{{CONTENT_TYPE}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n    \"data\": {\r\n        \"parentOperationId\": \"{{PARENT_OPERATION_ID}}\",\r\n        \"card\": {\r\n            \"vendorCode\": \"{{VENDOR_CODE}}\",\r\n            \"expiryDate\": \"{{CARD_EXP_DATE}}\",\r\n            \"cardNumber\": \"{{CARD_NUMBER}}\"\r\n        },\r\n        \"timestamp\": \"{{REVERSAL_TIMESTAMP}}\",\r\n        \"id\": \"{{ID}}\",\r\n        \"approvalCode\":\"{{APPROVAL_CODE}}\",\r\n        \"operationContext\": {\r\n            \"acquirerInformation\": {\r\n                \"acquirerCountry\": \"{{ACQUIRER_COUNTRY}}\",\r\n                \"acquirerBin\": \"{{ACQUIRER_BIN}}\"\r\n            },\r\n            \"merchantAccount\": {\r\n                \"name\": \"{{MERCHANT_NAME}}\",\r\n                \"login\": \"{{MERCHANT_LOGIN}}\",\r\n                \"password\": {\r\n                    \"payload\": \"{{MERCHANT_PWD}}\"\r\n                }\r\n            }    \r\n        },\r\n        \"amount\": {\r\n            \"value\": \"{{AMOUNT_VALUE_REV}}\",\r\n            \"currencyCode\": \"{{CURRENCY}}\"\r\n        }\r\n    }\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}",
+											"host": [
+												"{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}"
+											]
+										}
+									},
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json",
+											"name": "Content-Type",
+											"description": "",
+											"type": "text"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"errors\": [\n        {\n            \"status\": 409,\n            \"code\": 25754,\n            \"title\": \"REVERSAL ALREADY PERFORMED\"\n        }\n    ]\n}"
+								}
+							]
+						}
+					],
+					"description": "A _Reversal_ is an optional transaction which must be consecutive to a successful authorization performed during the acceptance stage of a payment. It consists in partially or fully reversing the previously authorized amount.\n\n- The reversal can be full or partial depending on the value of _AMOUNT_VALUE_REV_.\n- The _parentOperationId_ in the reversal body is the previous _id_ from the successful authorization to be reversed.\n- It's impossible to perform reversal in case of 1 step authorization because the capture is already performed.",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"postman.setEnvironmentVariable('REQUEST_TYPE', '/outpayce/v1/reversals/');"
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"try {",
+									"    // TEST BODY CONTENT and VALUES",
+									"    var jsonData = pm.response.json().data;",
+									"",
+									"    const bodyRequestData = JSON.parse(pm.request.body).data;",
+									"",
+									"    pm.test(\"Parent operation ID\", function () {",
+									"        pm.expect(jsonData.parentOperationId).to.eql(bodyRequestData.parentOperationId);",
+									"    });",
+									"",
+									"    // TEST APPROVAL CODE",
+									"    pm.test(\"ApprovalCode\", function(){",
+									"    pm.expect(jsonData.approvalCode).to.match(/\\d{6,8}/);",
+									"    pm.expect(jsonData.approvalCode.length >= 6 && jsonData.approvalCode.length <= 8).to.be.true;",
+									"    });",
+									"",
+									"    // TEST VENDOR CODE",
+									"     pm.test(\"Vendor code\", function(){",
+									"        pm.expect(jsonData.card.vendorCode).to.eql(bodyRequestData.card.vendorCode);",
+									"    });",
+									"  ",
+									"    } catch(error)",
+									"{}"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Capture",
+					"item": [
+						{
+							"name": "Multiple/partial Capture",
+							"item": [
+								{
+									"name": "1st Partial Capture",
+									"event": [
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													"// SAVING ID FOR NEXT OPERATIONS\r",
+													"    const id = pm.environment.get(\"PARENT_OPERATION_ID\");\r",
+													"    pm.environment.set(\"PARENT_OPERATION_ID_PARTIAL\", id);\r",
+													"\r",
+													"// SETTING PARTIAL CAPTURE AMOUNT\r",
+													"    const amount_partial_capt = pm.environment.get(\"AMOUNT_VALUE_AUTH\") / 2;\r",
+													"    pm.environment.set(\"AMOUNT_VALUE_CAPT\", amount_partial_capt);"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "{{CONTENT_TYPE}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n    \"data\": {\r\n        \"id\": \"{{ID}}\",\r\n        \"parentOperationId\": \"{{PARENT_OPERATION_ID}}\",\r\n        \"amount\": {\r\n            \"value\": \"{{AMOUNT_VALUE_CAPT}}\",\r\n            \"currencyCode\": \"{{CURRENCY}}\"\r\n        },\r\n        \"method\": \"CARD\",\r\n        \"card\": {\r\n            \"vendorCode\": \"{{VENDOR_CODE}}\",\r\n            \"cardNumber\": \"{{CARD_NUMBER}}\",\r\n            \"expiryDate\": \"{{CARD_EXP_DATE}}\"\r\n        },\r\n        \"timestamp\": \"{{CAPTURE_TIMESTAMP}}\",\r\n        \"approvalCode\":\"{{APPROVAL_CODE}}\",\r\n        \"operationContext\": {\r\n            \"links\": [\r\n                {\r\n                    \"rel\":\"{{REL}}\",\r\n                    \"href\":\"{{CAPT_HREF_LINK}}\"\r\n                }\r\n            ],\r\n            \"merchantAccount\": {\r\n                \"name\": \"{{MERCHANT_NAME}}\",\r\n                \"login\": \"{{MERCHANT_LOGIN}}\",\r\n                \"password\": {\r\n                    \"payload\": \"{{MERCHANT_PWD}}\"\r\n                }\r\n            },\r\n            \"acquirerInformation\": {\r\n                \"acquirerBin\": \"{{ACQUIRER_BIN}}\",\r\n                \"acquirerCountry\": \"{{ACQUIRER_COUNTRY}}\"\r\n            }\r\n        }\r\n    }\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}",
+											"host": [
+												"{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}"
+											]
+										},
+										"description": "This request performs a capture operation with the minimum fields."
+									},
+									"response": []
+								},
+								{
+									"name": "2nd Partial Capture",
+									"request": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "{{CONTENT_TYPE}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n    \"data\": {\r\n        \"id\": \"{{ID}}\",\r\n        \"parentOperationId\": \"{{PARENT_OPERATION_ID_PARTIAL}}\",\r\n        \"amount\": {\r\n            \"value\": \"{{AMOUNT_VALUE_CAPT}}\",\r\n            \"currencyCode\": \"{{CURRENCY}}\"\r\n        },\r\n        \"method\": \"CARD\",\r\n        \"card\": {\r\n            \"vendorCode\": \"{{VENDOR_CODE}}\",\r\n            \"cardNumber\": \"{{CARD_NUMBER}}\",\r\n            \"expiryDate\": \"{{CARD_EXP_DATE}}\"\r\n        },\r\n        \"timestamp\": \"{{CAPTURE_TIMESTAMP}}\",\r\n        \"approvalCode\":\"{{APPROVAL_CODE}}\",\r\n        \"operationContext\": {\r\n            \"links\": [\r\n                {\r\n                    \"rel\":\"{{REL}}\",\r\n                    \"href\":\"{{CAPT_HREF_LINK}}\"\r\n                }\r\n            ],\r\n            \"merchantAccount\": {\r\n                \"name\": \"{{MERCHANT_NAME}}\",\r\n                \"login\": \"{{MERCHANT_LOGIN}}\",\r\n                \"password\": {\r\n                    \"payload\": \"{{MERCHANT_PWD}}\"\r\n                }\r\n            },\r\n            \"acquirerInformation\": {\r\n                \"acquirerBin\": \"{{ACQUIRER_BIN}}\",\r\n                \"acquirerCountry\": \"{{ACQUIRER_COUNTRY}}\"\r\n            }\r\n        }\r\n    }\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}",
+											"host": [
+												"{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}"
+											]
+										},
+										"description": "This request performs a capture operation with the minimum fields."
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "Capture simple request",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "{{CONTENT_TYPE}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"data\": {\r\n        \"id\": \"{{ID}}\",\r\n        \"parentOperationId\": \"{{PARENT_OPERATION_ID}}\",\r\n        \"amount\": {\r\n            \"value\": \"{{AMOUNT_VALUE_CAPT}}\",\r\n            \"currencyCode\": \"{{CURRENCY}}\"\r\n        },\r\n        \"method\": \"CARD\",\r\n        \"card\": {\r\n            \"vendorCode\": \"{{VENDOR_CODE}}\",\r\n            \"cardNumber\": \"{{CARD_NUMBER}}\",\r\n            \"expiryDate\": \"{{CARD_EXP_DATE}}\"\r\n        },\r\n        \"timestamp\": \"{{CAPTURE_TIMESTAMP}}\",\r\n        \"approvalCode\":\"{{APPROVAL_CODE}}\",\r\n        \"operationContext\": {\r\n            \"links\": [\r\n                {\r\n                    \"rel\":\"{{REL}}\",\r\n                    \"href\":\"{{CAPT_HREF_LINK}}\"\r\n                }\r\n            ],\r\n            \"merchantAccount\": {\r\n                \"name\": \"{{MERCHANT_NAME}}\",\r\n                \"login\": \"{{MERCHANT_LOGIN}}\",\r\n                \"password\": {\r\n                    \"payload\": \"{{MERCHANT_PWD}}\"\r\n                }\r\n            },\r\n            \"acquirerInformation\": {\r\n                \"acquirerBin\": \"{{ACQUIRER_BIN}}\",\r\n                \"acquirerCountry\": \"{{ACQUIRER_COUNTRY}}\"\r\n            }\r\n        }\r\n    }\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}",
+									"host": [
+										"{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}"
+									]
+								},
+								"description": "This request performs a capture operation with the minimum fields."
+							},
+							"response": [
+								{
+									"name": "201 success",
+									"originalRequest": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/vnd.amadeus+json",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n    \"data\": {\r\n        \"id\": \"\",\r\n        \"parentOperationId\": \"\",\r\n        \"pspReconciliationReference\": \"1234567\",\r\n        \"amount\": {\r\n            \"value\": \"5\",\r\n            \"currencyCode\": \"EUR\"\r\n        },\r\n        \"method\": \"CARD\",\r\n        \"card\": {\r\n            \"vendorCode\": \"VI\",\r\n            \"cardNumber\": \"\",\r\n            \"expiryDate\": \"\"\r\n        },\r\n        \"timestamp\": \"2024-08-03T09:46:06Z\",\r\n        \"approvalCode\":\"123456\",\r\n        \"operationContext\": {\r\n            \"links\": [\r\n                {\r\n                    \"rel\":\"webhook\",\r\n                    \"href\":\"\"\r\n                }\r\n            ],\r\n            \"merchantAccount\": {\r\n                \"name\": \"merchantName\",\r\n                \"login\": \"merchantLogin\",\r\n                \"password\": {\r\n                    \"payload\": \"merchantPwd\"\r\n                }\r\n            },\r\n            \"acquirerInformation\": {\r\n                \"acquirerBin\": \"123456789\",\r\n                \"acquirerCountry\": \"FR\"\r\n            }\r\n        }\r\n    }\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "/outpayce/v1/authorizations/",
+											"path": [
+												"outpayce",
+												"v1",
+												"authorizations",
+												""
+											]
+										}
+									},
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json",
+											"name": "Content-Type",
+											"description": "",
+											"type": "text"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"data\": {\n        \"id\": \"a31b32c3-24d5-6e7f-978g-hi9j950k1l2\",\n        \"parentOperationId\": \"b31b32c3-24d5-6e7f-978g-hi9j950k1l2\",\n        \"timestamp\": \"2023-08-02T09:46:06Z\",\n        \"method\": \"CARD\",\n        \"amount\": {\n            \"value\": \"100\",\n            \"currencyCode\": \"EUR\"\n        },\n        \"status\": \"RECEIVED\"\n    }\n}"
+								},
+								{
+									"name": "400 bad request",
+									"originalRequest": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "{{CONTENT_TYPE}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n    \"data\": {\r\n        \"id\": \"{{ID}}\",\r\n        \"parentOperationId\": \"{{PARENT_OPERATION_ID}}\",\r\n        \"pspReconciliationReference\": \"{{PSP_RECONCILIATION_REFERENCE}}\",\r\n        \"amount\": {\r\n            \"value\": \"{{AMOUNT_VALUE_CAPT}}\",\r\n            \"currencyCode\": \"{{CURRENCY}}\"\r\n        },\r\n        \"method\": \"CARD\",\r\n        \"card\": {\r\n            \"vendorCode\": \"{{VENDOR_CODE}}\",\r\n            \"cardNumber\": \"{{CARD_NUMBER}}\",\r\n            \"expiryDate\": \"{{CARD_EXP_DATE}}\"\r\n        },\r\n        \"timestamp\": \"{{CAPTURE_TIMESTAMP}}\",\r\n        \"approvalCode\":\"{{APPROVAL_CODE}}\",\r\n        \"operationContext\": {\r\n            \"links\": [\r\n                {\r\n                    \"rel\":\"{{REL}}\",\r\n                    \"href\":\"{{CAPT_HREF_LINK}}\"\r\n                }\r\n            ],\r\n            \"merchantAccount\": {\r\n                \"name\": \"{{MERCHANT_NAME}}\",\r\n                \"login\": \"{{MERCHANT_LOGIN}}\",\r\n                \"password\": {\r\n                    \"payload\": \"{{MERCHANT_PWD}}\"\r\n                }\r\n            },\r\n            \"acquirerInformation\": {\r\n                \"acquirerBin\": \"{{ACQUIRER_BIN}}\",\r\n                \"acquirerCountry\": \"{{ACQUIRER_COUNTRY}}\"\r\n            }\r\n        }\r\n    }\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}",
+											"host": [
+												"{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}"
+											]
+										}
+									},
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json",
+											"name": "Content-Type",
+											"description": "",
+											"type": "text"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"errors\": [\n        {\n            \"status\": 400,\n            \"code\": 33460,\n            \"title\": \"MISSING REQUIRED INPUT PARAM(S) - PLEASE ADJUST REQUEST\",\n            \"details\": \"error description\",\n            \"source\": {\n                \"parameter\": \"#data/operationContext/merchantAccount/name\"\n            }\n        }\n    ]\n}"
+								},
+								{
+									"name": "409 conflict",
+									"originalRequest": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "{{CONTENT_TYPE}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n    \"data\": {\r\n        \"id\": \"{{ID}}\",\r\n        \"parentOperationId\": \"{{PARENT_OPERATION_ID}}\",\r\n        \"pspReconciliationReference\": \"{{PSP_RECONCILIATION_REFERENCE}}\",\r\n        \"amount\": {\r\n            \"value\": \"{{AMOUNT_VALUE_CAPT}}\",\r\n            \"currencyCode\": \"{{CURRENCY}}\"\r\n        },\r\n        \"method\": \"CARD\",\r\n        \"card\": {\r\n            \"vendorCode\": \"{{VENDOR_CODE}}\",\r\n            \"cardNumber\": \"{{CARD_NUMBER}}\",\r\n            \"expiryDate\": \"{{CARD_EXP_DATE}}\"\r\n        },\r\n        \"timestamp\": \"{{CAPTURE_TIMESTAMP}}\",\r\n        \"approvalCode\":\"{{APPROVAL_CODE}}\",\r\n        \"operationContext\": {\r\n            \"links\": [\r\n                {\r\n                    \"rel\":\"{{REL}}\",\r\n                    \"href\":\"{{CAPT_HREF_LINK}}\"\r\n                }\r\n            ],\r\n            \"merchantAccount\": {\r\n                \"name\": \"{{MERCHANT_NAME}}\",\r\n                \"login\": \"{{MERCHANT_LOGIN}}\",\r\n                \"password\": {\r\n                    \"payload\": \"{{MERCHANT_PWD}}\"\r\n                }\r\n            },\r\n            \"acquirerInformation\": {\r\n                \"acquirerBin\": \"{{ACQUIRER_BIN}}\",\r\n                \"acquirerCountry\": \"{{ACQUIRER_COUNTRY}}\"\r\n            }\r\n        }\r\n    }\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}",
+											"host": [
+												"{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}"
+											]
+										}
+									},
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json",
+											"name": "Content-Type",
+											"description": "",
+											"type": "text"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"errors\": [\n        {\n            \"status\": 409,\n            \"code\": 33548,\n            \"title\": \"PAYMENT PARTIAL CAPTURE NOT ALLOWED\"\n        }\n    ]\n}"
+								}
+							]
+						},
+						{
+							"name": "Capture w/ ticket number",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "{{CONTENT_TYPE}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"data\": {\r\n        \"id\": \"{{ID}}\",\r\n        \"parentOperationId\": \"{{PARENT_OPERATION_ID}}\",\r\n        \"amount\": {\r\n            \"value\": \"{{AMOUNT_VALUE_CAPT}}\",\r\n            \"currencyCode\": \"{{CURRENCY}}\"\r\n        },\r\n        \"method\": \"CARD\",\r\n        \"card\": {\r\n            \"vendorCode\": \"{{VENDOR_CODE}}\",\r\n            \"cardNumber\": \"{{CARD_NUMBER}}\",\r\n            \"expiryDate\": \"{{CARD_EXP_DATE}}\"\r\n        },\r\n        \"timestamp\": \"{{CAPTURE_TIMESTAMP}}\",\r\n        \"approvalCode\":\"{{APPROVAL_CODE}}\",\r\n        \"operationContext\": {\r\n            \"links\": [\r\n                {\r\n                    \"rel\":\"{{REL}}\",\r\n                    \"href\":\"{{CAPT_HREF_LINK}}\"\r\n                }\r\n            ],\r\n            \"merchantAccount\": {\r\n                \"name\": \"{{MERCHANT_NAME}}\",\r\n                \"login\": \"{{MERCHANT_LOGIN}}\",\r\n                \"password\": {\r\n                    \"payload\": \"{{MERCHANT_PWD}}\"\r\n                }\r\n            },\r\n            \"acquirerInformation\": {\r\n                \"acquirerBin\": \"{{ACQUIRER_BIN}}\",\r\n                \"acquirerCountry\": \"{{ACQUIRER_COUNTRY}}\"\r\n            }\r\n        }\r\n    }\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}",
+									"host": [
+										"{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}"
+									]
+								},
+								"description": "This request performs a capture operation with the minimum fields."
+							},
+							"response": []
+						},
+						{
+							"name": "Capture w/ flight data",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "{{CONTENT_TYPE}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"data\": {\r\n        \"id\": \"{{ID}}\",\r\n        \"parentOperationId\": \"{{PARENT_OPERATION_ID}}\",\r\n        \"amount\": {\r\n            \"value\": \"{{AMOUNT_VALUE_CAPT}}\",\r\n            \"currencyCode\": \"{{CURRENCY}}\"\r\n        },\r\n        \"method\": \"CARD\",\r\n        \"card\": {\r\n            \"vendorCode\": \"{{VENDOR_CODE}}\",\r\n            \"cardNumber\": \"{{CARD_NUMBER}}\",\r\n            \"expiryDate\": \"{{CARD_EXP_DATE}}\"\r\n        },\r\n        \"timestamp\": \"{{CAPTURE_TIMESTAMP}}\",\r\n        \"approvalCode\":\"{{APPROVAL_CODE}}\",\r\n        \"operationContext\": {\r\n            \"links\": [\r\n                {\r\n                    \"rel\":\"{{REL}}\",\r\n                    \"href\":\"{{CAPT_HREF_LINK}}\"\r\n                }\r\n            ],\r\n            \"merchantAccount\": {\r\n                \"name\": \"{{MERCHANT_NAME}}\",\r\n                \"login\": \"{{MERCHANT_LOGIN}}\",\r\n                \"password\": {\r\n                    \"payload\": \"{{MERCHANT_PWD}}\"\r\n                }\r\n            },\r\n            \"acquirerInformation\": {\r\n                \"acquirerBin\": \"{{ACQUIRER_BIN}}\",\r\n                \"acquirerCountry\": \"{{ACQUIRER_COUNTRY}}\"\r\n            }\r\n        },\r\n\t\t\"purposeOfOperation\": {\r\n            \"sales\": [\r\n                {\r\n                    \"salesItems\": [\r\n                        {\r\n                            \"flightSalesDetails\": {\r\n\t\t\t\t\t\t\t\t\"ticketNumber\": \"{{TICKET_NUMBER}}\",\r\n                                \"passenger\": {\r\n                                    \"name\": {\r\n                                        \"firstName\": \"{{PASS_FNAME}}\",\r\n                                        \"lastName\": \"{{PASS_LNAME}}\"\r\n                                    },\r\n                                    \"flightPassengerType\": \"{{PASS_TYPE}}\"\r\n                                },\r\n                                \"flightLegs\": [\r\n                                    {\r\n                                        \"departureAirportCode\": \"{{DEP_AIRPORT}}\",\r\n                                        \"travelDate\":\"{{TRAVEL_DATE}}\",\r\n                                        \"departureTime\": \"{{DEP_TIME}}\",\r\n                                        \"fareBasisCode\": \"{{FARE_BASIS_CODE}}\",\r\n                                        \"carrierCode\": \"{{CARRIER_CODE}}\",\r\n                                        \"flightNumber\": \"{{FLIGHT_NBR}}\",\r\n                                        \"arrivalTime\": \"{{ARR_TIME}}\",\r\n                                        \"couponNumber\": \"{{CPN_NBR}}\",\r\n                                        \"arrivalAirportCode\": \"{{ARR_AIRPORT}}\",\r\n                                        \"serviceClass\": \"{{SERVICE_CLASS}}\"\r\n                                    }\r\n                                ]\r\n                            },\r\n                            \"category\": \"{{CATEGORY}}\"\r\n                        }\r\n                    ],\r\n                    \"reference\": \"{{REFERENCE}}\",\r\n                    \"referenceType\": \"{{REFERENCE_TYPE}}\",\r\n                    \"referenceOwner\": \"{{REFERENCE_OWNER}}\"\r\n                }\r\n            ]\r\n        }\r\n    }\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}",
+									"host": [
+										"{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}"
+									]
+								},
+								"description": "This request performs a capture operation with flight data."
+							},
+							"response": []
+						}
+					],
+					"description": "A _Capture_ is a transaction which must be consecutive to a successful authorization, it consists in partially or fully taking the previously authorized amount from the client account.\n\n- It can be partial or full depending on the value of _AMOUNT_VALUE_CAPT_.\n- The _parentOperationId_ in the Capture body request is the previous _id_ from the successful authorization that you want to capture.\n- It's impossible to trigger a capture in case of 1 step authorization because the capture is performed automatically.",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"postman.setEnvironmentVariable('REQUEST_TYPE', '/outpayce/v1/captures/');"
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"",
+									"var jsonData = null;",
+									"try {",
+									"    // TEST BODY CONTENT and VALUES",
+									"    jsonData = pm.response.json().data;",
+									"",
+									"    // get request body param values",
+									"    const bodyRequestData = JSON.parse(pm.request.body).data;",
+									"",
+									"    // TEST PARENT OPERATION ID",
+									"    pm.test(\"Parent operation ID\", function () {",
+									"        pm.expect(jsonData.parentOperationId).to.eql(bodyRequestData.parentOperationId);",
+									"    });",
+									"",
+									"    // TEST AMOUNT",
+									"    pm.test(\"Amount\", function(){",
+									"        pm.expect(jsonData.amount.value).to.eql(bodyRequestData.amount.value);",
+									"    });",
+									"    // TEST CURRENCY",
+									"    pm.test(\"Currency\", function(){",
+									"        pm.expect(jsonData.amount.currencyCode).to.eql(bodyRequestData.amount.currencyCode);",
+									"    });",
+									"    ",
+									"    // TEST CAPTURE STATUS",
+									"    pm.test(\"Capture status\", function(){",
+									"        pm.expect(jsonData.status).to.eql(\"RECEIVED\");",
+									"    });",
+									"",
+									"} catch(error)",
+									"{}",
+									"",
+									"",
+									"",
+									""
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Refund",
+					"item": [
+						{
+							"name": "Multiple/partial Refund",
+							"item": [
+								{
+									"name": "1st Partial Refund",
+									"event": [
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													"// SAVING ID FOR NEXT OPERATIONS\r",
+													"    const id = pm.environment.get(\"PARENT_OPERATION_ID\");\r",
+													"    pm.environment.set(\"PARENT_OPERATION_ID_PARTIAL\", id);\r",
+													"\r",
+													"// SETTING PARTIAL REFUND AMOUNT\r",
+													"    const amount_partial_ref = pm.environment.get(\"AMOUNT_VALUE_AUTH\") / 2;\r",
+													"    pm.environment.set(\"AMOUNT_VALUE_REF\", amount_partial_ref);"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "{{CONTENT_TYPE}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n    \"data\": {\r\n        \"id\": \"{{ID}}\",\r\n        \"parentOperationId\": \"{{PARENT_OPERATION_ID}}\",\r\n        \"amount\": {\r\n            \"value\": \"{{AMOUNT_VALUE_REF}}\",\r\n            \"currencyCode\": \"{{CURRENCY}}\"\r\n        },\r\n        \"timestamp\": \"{{REFUND_TIMESTAMP}}\",\r\n        \"method\": \"CARD\",\r\n        \"card\": {\r\n            \"vendorCode\": \"{{VENDOR_CODE}}\",\r\n            \"cardNumber\": \"{{CARD_NUMBER}}\",\r\n            \"expiryDate\": \"{{CARD_EXP_DATE}}\"\r\n        },\r\n        \"operationContext\": {\r\n            \"merchantAccount\": {\r\n                \"name\": \"{{MERCHANT_NAME}}\",\r\n                \"login\": \"{{MERCHANT_LOGIN}}\",\r\n                \"password\": {\r\n                    \"payload\": \"{{MERCHANT_PWD}}\"\r\n                }\r\n            },\r\n            \"acquirerInformation\": {\r\n                \"acquirerBin\": \"{{ACQUIRER_BIN}}\",\r\n                \"acquirerCountry\": \"{{ACQUIRER_COUNTRY}}\"\r\n            },\r\n            \"links\": [\r\n                {\r\n                    \"rel\":\"{{REL}}\",\r\n                    \"href\":\"{{REF_HREF_LINK}}\"\r\n                }\r\n            ]\r\n        }\r\n    }\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}",
+											"host": [
+												"{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}"
+											]
+										},
+										"description": "This request performs a refund operation with the minimum fields."
+									},
+									"response": []
+								},
+								{
+									"name": "2nd Partial Refund",
+									"request": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "{{CONTENT_TYPE}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n    \"data\": {\r\n        \"id\": \"{{ID}}\",\r\n        \"parentOperationId\": \"{{PARENT_OPERATION_ID_PARTIAL}}\",\r\n        \"amount\": {\r\n            \"value\": \"{{AMOUNT_VALUE_REF}}\",\r\n            \"currencyCode\": \"{{CURRENCY}}\"\r\n        },\r\n        \"timestamp\": \"{{REFUND_TIMESTAMP}}\",\r\n        \"method\": \"CARD\",\r\n        \"card\": {\r\n            \"vendorCode\": \"{{VENDOR_CODE}}\",\r\n            \"cardNumber\": \"{{CARD_NUMBER}}\",\r\n            \"expiryDate\": \"{{CARD_EXP_DATE}}\"\r\n        },\r\n        \"operationContext\": {\r\n            \"merchantAccount\": {\r\n                \"name\": \"{{MERCHANT_NAME}}\",\r\n                \"login\": \"{{MERCHANT_LOGIN}}\",\r\n                \"password\": {\r\n                    \"payload\": \"{{MERCHANT_PWD}}\"\r\n                }\r\n            },\r\n            \"acquirerInformation\": {\r\n                \"acquirerBin\": \"{{ACQUIRER_BIN}}\",\r\n                \"acquirerCountry\": \"{{ACQUIRER_COUNTRY}}\"\r\n            },\r\n            \"links\": [\r\n                {\r\n                    \"rel\":\"{{REL}}\",\r\n                    \"href\":\"{{REF_HREF_LINK}}\"\r\n                }\r\n            ]\r\n        }\r\n    }\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}",
+											"host": [
+												"{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}"
+											]
+										},
+										"description": "This request performs a refund operation with the minimum fields."
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "Refund simple request",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "{{CONTENT_TYPE}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"data\": {\r\n        \"id\": \"{{ID}}\",\r\n        \"parentOperationId\": \"{{PARENT_OPERATION_ID}}\",\r\n        \"amount\": {\r\n            \"value\": \"{{AMOUNT_VALUE_REF}}\",\r\n            \"currencyCode\": \"{{CURRENCY}}\"\r\n        },\r\n        \"timestamp\": \"{{REFUND_TIMESTAMP}}\",\r\n        \"method\": \"CARD\",\r\n        \"card\": {\r\n            \"vendorCode\": \"{{VENDOR_CODE}}\",\r\n            \"cardNumber\": \"{{CARD_NUMBER}}\",\r\n            \"expiryDate\": \"{{CARD_EXP_DATE}}\"\r\n        },\r\n        \"operationContext\": {\r\n            \"merchantAccount\": {\r\n                \"name\": \"{{MERCHANT_NAME}}\",\r\n                \"login\": \"{{MERCHANT_LOGIN}}\",\r\n                \"password\": {\r\n                    \"payload\": \"{{MERCHANT_PWD}}\"\r\n                }\r\n            },\r\n            \"acquirerInformation\": {\r\n                \"acquirerBin\": \"{{ACQUIRER_BIN}}\",\r\n                \"acquirerCountry\": \"{{ACQUIRER_COUNTRY}}\"\r\n            },\r\n            \"links\": [\r\n                {\r\n                    \"rel\":\"{{REL}}\",\r\n                    \"href\":\"{{REF_HREF_LINK}}\"\r\n                }\r\n            ]\r\n        }\r\n    }\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}",
+									"host": [
+										"{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}"
+									]
+								},
+								"description": "This request performs a refund operation with the minimum fields."
+							},
+							"response": [
+								{
+									"name": "201 success",
+									"originalRequest": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/vnd.amadeus+json",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n    \"data\": {\r\n        \"id\": \"\",\r\n        \"parentOperationId\": \"\",\r\n        \"amount\": {\r\n            \"value\": \"5\",\r\n            \"currencyCode\": \"EUR\"\r\n        },\r\n        \"timestamp\": \"2024-08-04T09:46:06Z\",\r\n        \"approvalCode\":\"123456\",\r\n        \"method\": \"CARD\",\r\n        \"card\": {\r\n            \"vendorCode\": \"VI\",\r\n            \"cardNumber\": \"\",\r\n            \"expiryDate\": \"\"\r\n        },\r\n        \"operationContext\": {\r\n            \"merchantAccount\": {\r\n                \"name\": \"merchantName\",\r\n                \"login\": \"merchantLogin\",\r\n                \"password\": {\r\n                    \"payload\": \"merchantPwd\"\r\n                }\r\n            },\r\n            \"acquirerInformation\": {\r\n                \"acquirerBin\": \"123456789\",\r\n                \"acquirerCountry\": \"FR\"\r\n            },\r\n            \"links\": [\r\n                {\r\n                    \"rel\":\"webhook\",\r\n                    \"href\":\"\"\r\n                }\r\n            ]\r\n        }\r\n    }\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "/outpayce/v1/authorizations/",
+											"path": [
+												"outpayce",
+												"v1",
+												"authorizations",
+												""
+											]
+										}
+									},
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json",
+											"name": "Content-Type",
+											"description": "",
+											"type": "text"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"data\": {\n        \"id\": \"a31b32c3-24d5-6e7f-978g-hi9j950k1l2\",\n        \"parentOperationId\": \"b31b32c3-24d5-6e7f-978g-hi9j950k1l2\",\n        \"timestamp\": \"2023-08-02T09:46:06Z\",\n        \"method\": \"CARD\",\n        \"amount\": {\n            \"value\": \"100\",\n            \"currencyCode\": \"EUR\"\n        },\n        \"status\": \"RECEIVED\"\n    }\n}"
+								},
+								{
+									"name": "400 bad request",
+									"originalRequest": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "{{CONTENT_TYPE}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n    \"data\": {\r\n        \"id\": \"{{ID}}\",\r\n        \"parentOperationId\": \"{{PARENT_OPERATION_ID}}\",\r\n        \"amount\": {\r\n            \"value\": \"{{AMOUNT_VALUE_REF}}\",\r\n            \"currencyCode\": \"{{CURRENCY}}\"\r\n        },\r\n        \"timestamp\": \"{{REFUND_TIMESTAMP}}\",\r\n        \"approvalCode\":\"{{APPROVAL_CODE}}\",\r\n        \"method\": \"CARD\",\r\n        \"card\": {\r\n            \"vendorCode\": \"{{VENDOR_CODE}}\",\r\n            \"cardNumber\": \"{{CARD_NUMBER}}\",\r\n            \"expiryDate\": \"{{CARD_EXP_DATE}}\"\r\n        },\r\n        \"operationContext\": {\r\n            \"merchantAccount\": {\r\n                \"name\": \"{{MERCHANT_NAME}}\",\r\n                \"login\": \"{{MERCHANT_LOGIN}}\",\r\n                \"password\": {\r\n                    \"payload\": \"{{MERCHANT_PWD}}\"\r\n                }\r\n            },\r\n            \"acquirerInformation\": {\r\n                \"acquirerBin\": \"{{ACQUIRER_BIN}}\",\r\n                \"acquirerCountry\": \"{{ACQUIRER_COUNTRY}}\"\r\n            },\r\n            \"links\": [\r\n                {\r\n                    \"rel\":\"{{REL}}\",\r\n                    \"href\":\"{{REF_HREF_LINK}}\"\r\n                }\r\n            ]\r\n        }\r\n    }\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}",
+											"host": [
+												"{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}"
+											]
+										}
+									},
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json",
+											"name": "Content-Type",
+											"description": "",
+											"type": "text"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"errors\": [\n        {\n            \"status\": 400,\n            \"code\": 33460,\n            \"title\": \"MISSING REQUIRED INPUT PARAM(S) - PLEASE ADJUST REQUEST\",\n            \"details\": \"error description\",\n            \"source\": {\n                \"parameter\": \"#data/operationContext/merchantAccount/name\"\n            }\n        }\n    ]\n}"
+								},
+								{
+									"name": "409 conflict",
+									"originalRequest": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "{{CONTENT_TYPE}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n    \"data\": {\r\n        \"id\": \"{{ID}}\",\r\n        \"parentOperationId\": \"{{PARENT_OPERATION_ID}}\",\r\n        \"amount\": {\r\n            \"value\": \"{{AMOUNT_VALUE_REF}}\",\r\n            \"currencyCode\": \"{{CURRENCY}}\"\r\n        },\r\n        \"timestamp\": \"{{REFUND_TIMESTAMP}}\",\r\n        \"approvalCode\":\"{{APPROVAL_CODE}}\",\r\n        \"method\": \"CARD\",\r\n        \"card\": {\r\n            \"vendorCode\": \"{{VENDOR_CODE}}\",\r\n            \"cardNumber\": \"{{CARD_NUMBER}}\",\r\n            \"expiryDate\": \"{{CARD_EXP_DATE}}\"\r\n        },\r\n        \"operationContext\": {\r\n            \"merchantAccount\": {\r\n                \"name\": \"{{MERCHANT_NAME}}\",\r\n                \"login\": \"{{MERCHANT_LOGIN}}\",\r\n                \"password\": {\r\n                    \"payload\": \"{{MERCHANT_PWD}}\"\r\n                }\r\n            },\r\n            \"acquirerInformation\": {\r\n                \"acquirerBin\": \"{{ACQUIRER_BIN}}\",\r\n                \"acquirerCountry\": \"{{ACQUIRER_COUNTRY}}\"\r\n            },\r\n            \"links\": [\r\n                {\r\n                    \"rel\":\"{{REL}}\",\r\n                    \"href\":\"{{REF_HREF_LINK}}\"\r\n                }\r\n            ]\r\n        }\r\n    }\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}",
+											"host": [
+												"{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}"
+											]
+										}
+									},
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json",
+											"name": "Content-Type",
+											"description": "",
+											"type": "text"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"errors\": [\n        {\n            \"status\": 409,\n            \"code\": 33477,\n            \"title\": \"PAYMENT TRANSACTION ALREADY CANCELLED OR REFUNDED\"\n        }\n    ]\n}"
+								}
+							]
+						}
+					],
+					"description": "A _Refund_ is a transaction which must be consecutive to a successful capture, it consists in partially or fully refunding the previously captured amount to the client.\n\n- Refund can be partial or full depending on the amount.\n- The _parentOperationId_ in the Refund body request is the previous _id_ from the successful authorization that you want to refund.",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"postman.setEnvironmentVariable('REQUEST_TYPE', '/outpayce/v1/refunds/');"
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"",
+									"var jsonData = null;",
+									"try {",
+									"    // TEST BODY CONTENT and VALUES",
+									"    jsonData = pm.response.json().data;",
+									"",
+									"    // get request body param values",
+									"    const bodyRequestData = JSON.parse(pm.request.body).data;",
+									"",
+									"    // TEST PARENT OPERATION ID",
+									"    pm.test(\"Parent operation ID\", function () {",
+									"        pm.expect(jsonData.parentOperationId).to.eql(bodyRequestData.parentOperationId);",
+									"    });",
+									"",
+									"    // TEST AMOUNT",
+									"    pm.test(\"Amount\", function(){",
+									"        pm.expect(jsonData.amount.value).to.eql(bodyRequestData.amount.value);",
+									"    });",
+									"    // TEST CURRENCY",
+									"    pm.test(\"Currency\", function(){",
+									"        pm.expect(jsonData.amount.currencyCode).to.eql(bodyRequestData.amount.currencyCode);",
+									"    });",
+									"    ",
+									"    // TEST REFUND STATUS",
+									"    pm.test(\"Refund status\", function(){",
+									"        pm.expect(jsonData.status).to.eql(\"RECEIVED\");",
+									"    });",
+									"",
+									"} catch(error)",
+									"{}",
+									"",
+									"",
+									"",
+									""
+								]
+							}
+						}
+					]
+				}
+			],
+			"description": "In this folder you'll find what we call positive cases. The test cases that reflects a regular flow with no errors.",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"var jsonData = null;",
+							"try {",
+							"    // TEST BODY CONTENT and VALUES",
+							"    jsonData = pm.response.json().data;",
+							"",
+							"    // get request body param values",
+							"    const bodyRequestData = JSON.parse(pm.request.body).data;",
+							"",
+							"    // TEST CONTENT-TYPE",
+							"    const contentTypeHeader = pm.response.headers.get(\"Content-Type\");",
+							"    const expectedHeader = \"application/vnd.amadeus+json\";",
+							"    pm.test(\"Content-Type\", function(){",
+							"        pm.expect(contentTypeHeader).to.contain(expectedHeader);",
+							"    })",
+							"",
+							"    // TEST HTTP STATUS",
+							"    pm.test(\"Http status code\", function () {",
+							"            pm.response.to.have.status(201);",
+							"        });",
+							"",
+							"    // TEST METHOD",
+							"    pm.test(\"Method\", function(){",
+							"        pm.expect(jsonData.method).to.eql(bodyRequestData.method);",
+							"    });",
+							"",
+							"    // TEST TIMESTAMP",
+							"    const regexPattern = /\\d{4}-[01]\\d-[0-3]\\dT[0-2]\\d:[0-5]\\d:[0-5]\\d([+-][0-2]\\d:[0-5]\\d|Z)/",
+							"    if (jsonData.timestamp !== undefined) {",
+							"        pm.test(\"Timestamp\", function(){",
+							"            pm.expect(jsonData.timestamp).to.match(regexPattern);",
+							"        });",
+							"    } else {",
+							"    };",
+							"    ",
+							"} catch(error)",
+							"{}",
+							"",
+							""
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "Error handling",
+			"item": [
+				{
+					"name": "Reversal on 1-step payment",
+					"item": [
+						{
+							"name": "Author (Reversal on 1-step payment)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"\r",
+											"var jsonData = null;\r",
+											"try {\r",
+											"    // TEST BODY CONTENT and VALUES\r",
+											"    jsonData = pm.response.json().data;\r",
+											"\r",
+											"    // get request body param values\r",
+											"    const bodyRequestData = JSON.parse(pm.request.body).data;\r",
+											"\r",
+											"    // SAVING ID FOR NEXT OPERATIONS\r",
+											"    pm.environment.set(\"PARENT_OPERATION_ID\", jsonData.id);\r",
+											"\r",
+											"    // SAVING APPROVAL CODE FOR NEXT OPERATIONS\r",
+											"    pm.environment.set(\"APPROVAL_CODE\", jsonData.approvalCode);\r",
+											"\r",
+											"    // TEST CONTENT-TYPE\r",
+											"    const contentTypeHeader = pm.response.headers.get(\"Content-Type\");\r",
+											"    const expectedHeader = \"application/vnd.amadeus+json\";\r",
+											"    pm.test(\"Content-Type\", function(){\r",
+											"        pm.expect(contentTypeHeader).to.contain(expectedHeader);\r",
+											"    })\r",
+											"\r",
+											"    // TEST STATUS\r",
+											"    pm.test(\"Status code\", function () {\r",
+											"            pm.response.to.have.status(201);\r",
+											"        });\r",
+											"    \r",
+											"    // TEST APPROVAL CODE\r",
+											"    pm.test(\"ApprovalCode\", function(){\r",
+											"    pm.expect(jsonData.approvalCode).to.match(/\\d{6,8}/);\r",
+											"    pm.expect(jsonData.approvalCode.length >= 6 && jsonData.approvalCode.length <= 8).to.be.true;\r",
+											"    });\r",
+											"\r",
+											"    // TEST VENDOR CODE\r",
+											"     pm.test(\"Vendor code\", function(){\r",
+											"        pm.expect(jsonData.card.vendorCode).to.eql(bodyRequestData.card.vendorCode);\r",
+											"    });\r",
+											"\r",
+											"    // TEST CVV\r",
+											"    if (jsonData.cvv !== undefined) {\r",
+											"        pm.test(\"Cvv\", function(){\r",
+											"            pm.expect(jsonData.card.cvv).to.eql(bodyRequestData.card.cvv);\r",
+											"        });\r",
+											"    } else {\r",
+											"    };\r",
+											"\r",
+											"    // TEST EXPIRY DATE\r",
+											"    if (jsonData.card.expiryDate !== undefined) {\r",
+											"        pm.test(\"ExpiryDate\", function(){\r",
+											"            pm.expect(jsonData.card.expiryDate).to.eql(bodyRequestData.card.expiryDate);\r",
+											"        });\r",
+											"    } else {\r",
+											"    };\r",
+											"    \r",
+											"} catch(error)\r",
+											"{}\r",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"postman.setEnvironmentVariable('REQUEST_TYPE', '/outpayce/v1/authorizations/');\r",
+											"postman.setEnvironmentVariable('AUTHORIZATION_TYPE', 'AUTHOR_AND_CAPTURE');"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "{{CONTENT_TYPE}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"data\": {\r\n        \"card\": {\r\n            \"vendorCode\": \"{{VENDOR_CODE}}\",\r\n            \"cardNumber\": \"{{CARD_NUMBER}}\",\r\n            \"cvv\": \"{{CARD_CVV}}\",\r\n            \"expiryDate\": \"{{CARD_EXP_DATE}}\"\r\n        },\r\n        \"id\": \"{{ID}}\",\r\n        \"method\": \"CARD\",\r\n        \"timestamp\": \"{{AUTHOR_TIMESTAMP}}\",\r\n        \"authorizationType\": \"{{AUTHORIZATION_TYPE}}\",\r\n        \"operationContext\": {\r\n            \"acquirerInformation\": {\r\n                \"acquirerCountry\": \"{{ACQUIRER_COUNTRY}}\",\r\n                \"acquirerBin\": \"{{ACQUIRER_BIN}}\"\r\n            },\r\n            \"merchantAccount\": {\r\n                \"name\": \"{{MERCHANT_NAME}}\",\r\n                \"login\": \"{{MERCHANT_LOGIN}}\",\r\n                \"password\": {\r\n                    \"payload\": \"{{MERCHANT_PWD}}\"\r\n                }\r\n            }    \r\n        },\r\n        \"amount\": {\r\n            \"value\": \"{{AMOUNT_VALUE_AUTH}}\",\r\n            \"currencyCode\": \"{{CURRENCY}}\"\r\n        }\r\n    }\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}",
+									"host": [
+										"{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}"
+									]
+								},
+								"description": "This request performs an authorization operation with the minimum fields."
+							},
+							"response": []
+						},
+						{
+							"name": "Reversal (Reversal on 1-step payment)",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"postman.setEnvironmentVariable('REQUEST_TYPE', '/outpayce/v1/reversals/');\r",
+											"// SETTING REVERSAL AMOUNT\r",
+											"    const amount_rev = pm.environment.get(\"AMOUNT_VALUE_AUTH\");\r",
+											"    pm.environment.set(\"AMOUNT_VALUE_REV\", amount_rev);"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = null;\r",
+											"try {\r",
+											"\r",
+											"    // TEST CONTENT-TYPE\r",
+											"    const contentTypeHeader = pm.response.headers.get(\"Content-Type\");\r",
+											"    const expectedHeader = \"application/vnd.amadeus+json\";\r",
+											"    pm.test(\"Content-Type\", function(){\r",
+											"        pm.expect(contentTypeHeader).to.contain(expectedHeader);\r",
+											"    })\r",
+											"\r",
+											"    // TEST STATUS\r",
+											"    pm.test(\"Status code is error code\", function () {\r",
+											"            pm.expect(pm.response.code).to.be.above(399);\r",
+											"            return true;\r",
+											"        });\r",
+											"\r",
+											"} catch(error)\r",
+											"{}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "{{CONTENT_TYPE}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"data\": {\r\n        \"parentOperationId\": \"{{PARENT_OPERATION_ID}}\",\r\n        \"card\": {\r\n            \"vendorCode\": \"{{VENDOR_CODE}}\",\r\n            \"expiryDate\": \"{{CARD_EXP_DATE}}\",\r\n            \"cardNumber\": \"{{CARD_NUMBER}}\"\r\n        },\r\n        \"timestamp\": \"{{REVERSAL_TIMESTAMP}}\",\r\n        \"id\": \"{{ID}}\",\r\n        \"method\": \"CARD\",\r\n        \"approvalCode\":\"{{APPROVAL_CODE}}\",\r\n        \"operationContext\": {\r\n            \"acquirerInformation\": {\r\n                \"acquirerCountry\": \"{{ACQUIRER_COUNTRY}}\",\r\n                \"acquirerBin\": \"{{ACQUIRER_BIN}}\"\r\n            },\r\n            \"merchantAccount\": {\r\n                \"name\": \"{{MERCHANT_NAME}}\",\r\n                \"login\": \"{{MERCHANT_LOGIN}}\",\r\n                \"password\": {\r\n                    \"payload\": \"{{MERCHANT_PWD}}\"\r\n                }\r\n            }    \r\n        },\r\n        \"amount\": {\r\n            \"value\": \"{{AMOUNT_VALUE_REV}}\",\r\n            \"currencyCode\": \"{{CURRENCY}}\"\r\n        }\r\n    }\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}",
+									"host": [
+										"{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}"
+									]
+								},
+								"description": "This request performs a reversal operation with the minimum fields."
+							},
+							"response": []
+						}
+					],
+					"description": "This usecase performs a reversal after a 1-step payment (authorization + capture). An error should be returned at reversal execution."
+				},
+				{
+					"name": "Capture on 1-step payment",
+					"item": [
+						{
+							"name": "Author (Capture on 1-step payment)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"\r",
+											"var jsonData = null;\r",
+											"try {\r",
+											"    // TEST BODY CONTENT and VALUES\r",
+											"    jsonData = pm.response.json().data;\r",
+											"\r",
+											"    // get request body param values\r",
+											"    const bodyRequestData = JSON.parse(pm.request.body).data;\r",
+											"\r",
+											"    // SAVING ID FOR NEXT OPERATIONS\r",
+											"    pm.environment.set(\"PARENT_OPERATION_ID\", jsonData.id);\r",
+											"\r",
+											"    // SAVING APPROVAL CODE FOR NEXT OPERATIONS\r",
+											"    pm.environment.set(\"APPROVAL_CODE\", jsonData.approvalCode);\r",
+											"\r",
+											"    // TEST CONTENT-TYPE\r",
+											"    const contentTypeHeader = pm.response.headers.get(\"Content-Type\");\r",
+											"    const expectedHeader = \"application/vnd.amadeus+json\";\r",
+											"    pm.test(\"Content-Type\", function(){\r",
+											"        pm.expect(contentTypeHeader).to.contain(expectedHeader);\r",
+											"    })\r",
+											"\r",
+											"    // TEST STATUS\r",
+											"    pm.test(\"Status code\", function () {\r",
+											"            pm.response.to.have.status(201);\r",
+											"        });\r",
+											"    \r",
+											"    // TEST APPROVAL CODE\r",
+											"    pm.test(\"ApprovalCode\", function(){\r",
+											"    pm.expect(jsonData.approvalCode).to.match(/\\d{6,8}/);\r",
+											"    pm.expect(jsonData.approvalCode.length >= 6 && jsonData.approvalCode.length <= 8).to.be.true;\r",
+											"    });\r",
+											"\r",
+											"    // TEST VENDOR CODE\r",
+											"     pm.test(\"Vendor code\", function(){\r",
+											"        pm.expect(jsonData.card.vendorCode).to.eql(bodyRequestData.card.vendorCode);\r",
+											"    });\r",
+											"\r",
+											"    // TEST CVV\r",
+											"    if (jsonData.cvv !== undefined) {\r",
+											"        pm.test(\"Cvv\", function(){\r",
+											"            pm.expect(jsonData.card.cvv).to.eql(bodyRequestData.card.cvv);\r",
+											"        });\r",
+											"    } else {\r",
+											"    };\r",
+											"\r",
+											"    // TEST EXPIRY DATE\r",
+											"    if (jsonData.card.expiryDate !== undefined) {\r",
+											"        pm.test(\"ExpiryDate\", function(){\r",
+											"            pm.expect(jsonData.card.expiryDate).to.eql(bodyRequestData.card.expiryDate);\r",
+											"        });\r",
+											"    } else {\r",
+											"    };\r",
+											"    \r",
+											"} catch(error)\r",
+											"{}\r",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"postman.setEnvironmentVariable('REQUEST_TYPE', '/outpayce/v1/authorizations/');\r",
+											"postman.setEnvironmentVariable('AUTHORIZATION_TYPE', 'AUTHOR_AND_CAPTURE');"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "{{CONTENT_TYPE}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"data\": {\r\n        \"card\": {\r\n            \"vendorCode\": \"{{VENDOR_CODE}}\",\r\n            \"cardNumber\": \"{{CARD_NUMBER}}\",\r\n            \"cvv\": \"{{CARD_CVV}}\",\r\n            \"expiryDate\": \"{{CARD_EXP_DATE}}\"\r\n        },\r\n        \"id\": \"{{ID}}\",\r\n        \"method\": \"CARD\",\r\n        \"timestamp\": \"{{AUTHOR_TIMESTAMP}}\",\r\n        \"authorizationType\": \"{{AUTHORIZATION_TYPE}}\",\r\n        \"operationContext\": {\r\n            \"acquirerInformation\": {\r\n                \"acquirerCountry\": \"{{ACQUIRER_COUNTRY}}\",\r\n                \"acquirerBin\": \"{{ACQUIRER_BIN}}\"\r\n            },\r\n            \"merchantAccount\": {\r\n                \"name\": \"{{MERCHANT_NAME}}\",\r\n                \"login\": \"{{MERCHANT_LOGIN}}\",\r\n                \"password\": {\r\n                    \"payload\": \"{{MERCHANT_PWD}}\"\r\n                }\r\n            }    \r\n        },\r\n        \"amount\": {\r\n            \"value\": \"{{AMOUNT_VALUE_AUTH}}\",\r\n            \"currencyCode\": \"{{CURRENCY}}\"\r\n        }\r\n    }\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}",
+									"host": [
+										"{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}"
+									]
+								},
+								"description": "This request performs an authorization operation with the minimum fields."
+							},
+							"response": []
+						},
+						{
+							"name": "Capture (Capture on 1-step payment)",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"postman.setEnvironmentVariable('REQUEST_TYPE', '/outpayce/v1/captures/');\r",
+											"// SETTING CAPTURE AMOUNT\r",
+											"    const amount_cap = pm.environment.get(\"AMOUNT_VALUE_AUTH\");\r",
+											"    pm.environment.set(\"AMOUNT_VALUE_CAPT\", amount_cap);"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = null;\r",
+											"try {\r",
+											"\r",
+											"    // TEST CONTENT-TYPE\r",
+											"    const contentTypeHeader = pm.response.headers.get(\"Content-Type\");\r",
+											"    const expectedHeader = \"application/vnd.amadeus+json\";\r",
+											"    pm.test(\"Content-Type\", function(){\r",
+											"        pm.expect(contentTypeHeader).to.contain(expectedHeader);\r",
+											"    })\r",
+											"\r",
+											"    // TEST STATUS\r",
+											"    pm.test(\"Status code is error code\", function () {\r",
+											"            pm.expect(pm.response.code).to.be.above(399);\r",
+											"            return true;\r",
+											"        });\r",
+											"\r",
+											"} catch(error)\r",
+											"{}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "{{CONTENT_TYPE}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"data\": {\r\n        \"id\": \"{{ID}}\",\r\n        \"parentOperationId\": \"{{PARENT_OPERATION_ID}}\",\r\n        \"amount\": {\r\n            \"value\": \"{{AMOUNT_VALUE_CAPT}}\",\r\n            \"currencyCode\": \"{{CURRENCY}}\"\r\n        },\r\n        \"method\": \"CARD\",\r\n        \"card\": {\r\n            \"vendorCode\": \"{{VENDOR_CODE}}\",\r\n            \"cardNumber\": \"{{CARD_NUMBER}}\",\r\n            \"expiryDate\": \"{{CARD_EXP_DATE}}\"\r\n        },\r\n        \"timestamp\": \"{{CAPTURE_TIMESTAMP}}\",\r\n        \"approvalCode\":\"{{APPROVAL_CODE}}\",\r\n        \"operationContext\": {\r\n            \"links\": [\r\n                {\r\n                    \"rel\":\"{{REL}}\",\r\n                    \"href\":\"{{CAPT_HREF_LINK}}\"\r\n                }\r\n            ],\r\n            \"merchantAccount\": {\r\n                \"name\": \"{{MERCHANT_NAME}}\",\r\n                \"login\": \"{{MERCHANT_LOGIN}}\",\r\n                \"password\": {\r\n                    \"payload\": \"{{MERCHANT_PWD}}\"\r\n                }\r\n            },\r\n            \"acquirerInformation\": {\r\n                \"acquirerBin\": \"{{ACQUIRER_BIN}}\",\r\n                \"acquirerCountry\": \"{{ACQUIRER_COUNTRY}}\"\r\n            }\r\n        }\r\n    }\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}",
+									"host": [
+										"{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}"
+									]
+								},
+								"description": "This request performs a partial capture operation with minimum fields."
+							},
+							"response": []
+						}
+					],
+					"description": "This usecase performs a reversal after a 1-step payment (authorization + capture). An error should be returned at reversal execution."
+				},
+				{
+					"name": "Partial reversal not allowed",
+					"item": [
+						{
+							"name": "Author (Partial reversal not allowed)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"\r",
+											"var jsonData = null;\r",
+											"try {\r",
+											"    // TEST BODY CONTENT and VALUES\r",
+											"    jsonData = pm.response.json().data;\r",
+											"\r",
+											"    // get request body param values\r",
+											"    const bodyRequestData = JSON.parse(pm.request.body).data;\r",
+											"\r",
+											"    // SAVING ID FOR NEXT OPERATIONS\r",
+											"    pm.environment.set(\"PARENT_OPERATION_ID\", jsonData.id);\r",
+											"\r",
+											"    // SAVING APPROVAL CODE FOR NEXT OPERATIONS\r",
+											"    pm.environment.set(\"APPROVAL_CODE\", jsonData.approvalCode);\r",
+											"\r",
+											"    // TEST CONTENT-TYPE\r",
+											"    const contentTypeHeader = pm.response.headers.get(\"Content-Type\");\r",
+											"    const expectedHeader = \"application/vnd.amadeus+json\";\r",
+											"    pm.test(\"Content-Type\", function(){\r",
+											"        pm.expect(contentTypeHeader).to.contain(expectedHeader);\r",
+											"    })\r",
+											"\r",
+											"    // TEST STATUS\r",
+											"    pm.test(\"Status code\", function () {\r",
+											"            pm.response.to.have.status(201);\r",
+											"        });\r",
+											"    \r",
+											"    // TEST APPROVAL CODE\r",
+											"    pm.test(\"ApprovalCode\", function(){\r",
+											"    pm.expect(jsonData.approvalCode).to.match(/\\d{6,8}/);\r",
+											"    pm.expect(jsonData.approvalCode.length >= 6 && jsonData.approvalCode.length <= 8).to.be.true;\r",
+											"    });\r",
+											"\r",
+											"    // TEST VENDOR CODE\r",
+											"     pm.test(\"Vendor code\", function(){\r",
+											"        pm.expect(jsonData.card.vendorCode).to.eql(bodyRequestData.card.vendorCode);\r",
+											"    });\r",
+											"\r",
+											"    // TEST CVV\r",
+											"    if (jsonData.cvv !== undefined) {\r",
+											"        pm.test(\"Cvv\", function(){\r",
+											"            pm.expect(jsonData.card.cvv).to.eql(bodyRequestData.card.cvv);\r",
+											"        });\r",
+											"    } else {\r",
+											"    };\r",
+											"\r",
+											"    // TEST EXPIRY DATE\r",
+											"    if (jsonData.card.expiryDate !== undefined) {\r",
+											"        pm.test(\"ExpiryDate\", function(){\r",
+											"            pm.expect(jsonData.card.expiryDate).to.eql(bodyRequestData.card.expiryDate);\r",
+											"        });\r",
+											"    } else {\r",
+											"    };\r",
+											"    \r",
+											"} catch(error)\r",
+											"{}\r",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"postman.setEnvironmentVariable('REQUEST_TYPE', '/outpayce/v1/authorizations/');\r",
+											"postman.setEnvironmentVariable('AUTHORIZATION_TYPE', 'AUTHORIZATION_ONLY');"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "{{CONTENT_TYPE}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"data\": {\r\n        \"card\": {\r\n            \"vendorCode\": \"{{VENDOR_CODE}}\",\r\n            \"cardNumber\": \"{{CARD_NUMBER}}\",\r\n            \"cvv\": \"{{CARD_CVV}}\",\r\n            \"expiryDate\": \"{{CARD_EXP_DATE}}\"\r\n        },\r\n        \"id\": \"{{ID}}\",\r\n        \"method\": \"CARD\",\r\n        \"timestamp\": \"{{AUTHOR_TIMESTAMP}}\",\r\n        \"authorizationType\": \"{{AUTHORIZATION_TYPE}}\",\r\n        \"operationContext\": {\r\n            \"acquirerInformation\": {\r\n                \"acquirerCountry\": \"{{ACQUIRER_COUNTRY}}\",\r\n                \"acquirerBin\": \"{{ACQUIRER_BIN}}\"\r\n            },\r\n            \"merchantAccount\": {\r\n                \"name\": \"{{MERCHANT_NAME}}\",\r\n                \"login\": \"{{MERCHANT_LOGIN}}\",\r\n                \"password\": {\r\n                    \"payload\": \"{{MERCHANT_PWD}}\"\r\n                }\r\n            }    \r\n        },\r\n        \"amount\": {\r\n            \"value\": \"{{AMOUNT_VALUE_AUTH}}\",\r\n            \"currencyCode\": \"{{CURRENCY}}\"\r\n        }\r\n    }\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}",
+									"host": [
+										"{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}"
+									]
+								},
+								"description": "This request performs an authorization operation with the minimum fields."
+							},
+							"response": []
+						},
+						{
+							"name": "Reversal (Partial reversal not allowed)",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"postman.setEnvironmentVariable('REQUEST_TYPE', '/outpayce/v1/reversals/');\r",
+											"const reversalAmount = pm.environment.get(\"AMOUNT_VALUE_AUTH\") / 2;\r",
+											"pm.environment.set(\"AMOUNT_VALUE_REV\", reversalAmount);"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = null;\r",
+											"try {\r",
+											"\r",
+											"    // TEST CONTENT-TYPE\r",
+											"    const contentTypeHeader = pm.response.headers.get(\"Content-Type\");\r",
+											"    const expectedHeader = \"application/vnd.amadeus+json\";\r",
+											"    pm.test(\"Content-Type\", function(){\r",
+											"        pm.expect(contentTypeHeader).to.contain(expectedHeader);\r",
+											"    })\r",
+											"\r",
+											"    // TEST STATUS\r",
+											"    pm.test(\"Status code is error code\", function () {\r",
+											"            pm.expect(pm.response.code).to.be.above(399);\r",
+											"            return true;\r",
+											"        });\r",
+											"\r",
+											"} catch(error)\r",
+											"{}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "{{CONTENT_TYPE}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"data\": {\r\n        \"parentOperationId\": \"{{PARENT_OPERATION_ID}}\",\r\n        \"card\": {\r\n            \"vendorCode\": \"{{VENDOR_CODE}}\",\r\n            \"expiryDate\": \"{{CARD_EXP_DATE}}\",\r\n            \"cardNumber\": \"{{CARD_NUMBER}}\"\r\n        },\r\n        \"timestamp\": \"{{REVERSAL_TIMESTAMP}}\",\r\n        \"id\": \"{{ID}}\",\r\n        \"method\": \"CARD\",\r\n        \"approvalCode\":\"{{APPROVAL_CODE}}\",\r\n        \"operationContext\": {\r\n            \"acquirerInformation\": {\r\n                \"acquirerCountry\": \"{{ACQUIRER_COUNTRY}}\",\r\n                \"acquirerBin\": \"{{ACQUIRER_BIN}}\"\r\n            },\r\n            \"merchantAccount\": {\r\n                \"name\": \"{{MERCHANT_NAME}}\",\r\n                \"login\": \"{{MERCHANT_LOGIN}}\",\r\n                \"password\": {\r\n                    \"payload\": \"{{MERCHANT_PWD}}\"\r\n                }\r\n            }    \r\n        },\r\n        \"amount\": {\r\n            \"value\": \"{{AMOUNT_VALUE_REV}}\",\r\n            \"currencyCode\": \"{{CURRENCY}}\"\r\n        }\r\n    }\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}",
+									"host": [
+										"{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}"
+									]
+								},
+								"description": "This request performs a partial reversal operation with the minimum fields."
+							},
+							"response": []
+						}
+					],
+					"description": "This usecase performs a partial reversal. If the provider does not allow partial reversal it should triggers an error."
+				},
+				{
+					"name": "Partial capture not allowed",
+					"item": [
+						{
+							"name": "Author (Partial capture not allowed)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"\r",
+											"var jsonData = null;\r",
+											"try {\r",
+											"    // TEST BODY CONTENT and VALUES\r",
+											"    jsonData = pm.response.json().data;\r",
+											"\r",
+											"    // get request body param values\r",
+											"    const bodyRequestData = JSON.parse(pm.request.body).data;\r",
+											"\r",
+											"    // SAVING ID FOR NEXT OPERATIONS\r",
+											"    pm.environment.set(\"PARENT_OPERATION_ID\", jsonData.id);\r",
+											"\r",
+											"    // SAVING APPROVAL CODE FOR NEXT OPERATIONS\r",
+											"    pm.environment.set(\"APPROVAL_CODE\", jsonData.approvalCode);\r",
+											"\r",
+											"    // TEST CONTENT-TYPE\r",
+											"    const contentTypeHeader = pm.response.headers.get(\"Content-Type\");\r",
+											"    const expectedHeader = \"application/vnd.amadeus+json\";\r",
+											"    pm.test(\"Content-Type\", function(){\r",
+											"        pm.expect(contentTypeHeader).to.contain(expectedHeader);\r",
+											"    })\r",
+											"\r",
+											"    // TEST STATUS\r",
+											"    pm.test(\"Status code\", function () {\r",
+											"            pm.response.to.have.status(201);\r",
+											"        });\r",
+											"    \r",
+											"    // TEST APPROVAL CODE\r",
+											"    pm.test(\"ApprovalCode\", function(){\r",
+											"    pm.expect(jsonData.approvalCode).to.match(/\\d{6,8}/);\r",
+											"    pm.expect(jsonData.approvalCode.length >= 6 && jsonData.approvalCode.length <= 8).to.be.true;\r",
+											"    });\r",
+											"\r",
+											"    // TEST VENDOR CODE\r",
+											"     pm.test(\"Vendor code\", function(){\r",
+											"        pm.expect(jsonData.card.vendorCode).to.eql(bodyRequestData.card.vendorCode);\r",
+											"    });\r",
+											"\r",
+											"    // TEST CVV\r",
+											"    if (jsonData.cvv !== undefined) {\r",
+											"        pm.test(\"Cvv\", function(){\r",
+											"            pm.expect(jsonData.card.cvv).to.eql(bodyRequestData.card.cvv);\r",
+											"        });\r",
+											"    } else {\r",
+											"    };\r",
+											"\r",
+											"    // TEST EXPIRY DATE\r",
+											"    if (jsonData.card.expiryDate !== undefined) {\r",
+											"        pm.test(\"ExpiryDate\", function(){\r",
+											"            pm.expect(jsonData.card.expiryDate).to.eql(bodyRequestData.card.expiryDate);\r",
+											"        });\r",
+											"    } else {\r",
+											"    };\r",
+											"    \r",
+											"} catch(error)\r",
+											"{}\r",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"postman.setEnvironmentVariable('REQUEST_TYPE', '/outpayce/v1/authorizations/');\r",
+											"postman.setEnvironmentVariable('AUTHORIZATION_TYPE', 'AUTHORIZATION_ONLY');"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "{{CONTENT_TYPE}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"data\": {\r\n        \"card\": {\r\n            \"vendorCode\": \"{{VENDOR_CODE}}\",\r\n            \"cardNumber\": \"{{CARD_NUMBER}}\",\r\n            \"cvv\": \"{{CARD_CVV}}\",\r\n            \"expiryDate\": \"{{CARD_EXP_DATE}}\"\r\n        },\r\n        \"id\": \"{{ID}}\",\r\n        \"method\": \"CARD\",\r\n        \"timestamp\": \"{{AUTHOR_TIMESTAMP}}\",\r\n        \"authorizationType\": \"{{AUTHORIZATION_TYPE}}\",\r\n        \"operationContext\": {\r\n            \"acquirerInformation\": {\r\n                \"acquirerCountry\": \"{{ACQUIRER_COUNTRY}}\",\r\n                \"acquirerBin\": \"{{ACQUIRER_BIN}}\"\r\n            },\r\n            \"merchantAccount\": {\r\n                \"name\": \"{{MERCHANT_NAME}}\",\r\n                \"login\": \"{{MERCHANT_LOGIN}}\",\r\n                \"password\": {\r\n                    \"payload\": \"{{MERCHANT_PWD}}\"\r\n                }\r\n            }    \r\n        },\r\n        \"amount\": {\r\n            \"value\": \"{{AMOUNT_VALUE_AUTH}}\",\r\n            \"currencyCode\": \"{{CURRENCY}}\"\r\n        }\r\n    }\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}",
+									"host": [
+										"{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}"
+									]
+								},
+								"description": "This request performs an authorization operation with the minimum fields."
+							},
+							"response": []
+						},
+						{
+							"name": "Capture (Partial capture not allowed)",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"postman.setEnvironmentVariable('REQUEST_TYPE', '/outpayce/v1/captures/');\r",
+											"const captureAmount = pm.environment.get(\"AMOUNT_VALUE_AUTH\") / 2;\r",
+											"pm.environment.set(\"AMOUNT_VALUE_CAPT\", captureAmount);"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = null;\r",
+											"try {\r",
+											"\r",
+											"    // TEST CONTENT-TYPE\r",
+											"    const contentTypeHeader = pm.response.headers.get(\"Content-Type\");\r",
+											"    const expectedHeader = \"application/vnd.amadeus+json\";\r",
+											"    pm.test(\"Content-Type\", function(){\r",
+											"        pm.expect(contentTypeHeader).to.contain(expectedHeader);\r",
+											"    })\r",
+											"\r",
+											"    // TEST STATUS\r",
+											"    pm.test(\"Status code is error code\", function () {\r",
+											"            pm.expect(pm.response.code).to.be.above(399);\r",
+											"            return true;\r",
+											"        });\r",
+											"\r",
+											"} catch(error)\r",
+											"{}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "{{CONTENT_TYPE}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"data\": {\r\n        \"id\": \"{{ID}}\",\r\n        \"parentOperationId\": \"{{PARENT_OPERATION_ID}}\",\r\n        \"amount\": {\r\n            \"value\": \"{{AMOUNT_VALUE_CAPT}}\",\r\n            \"currencyCode\": \"{{CURRENCY}}\"\r\n        },\r\n        \"method\": \"CARD\",\r\n        \"card\": {\r\n            \"vendorCode\": \"{{VENDOR_CODE}}\",\r\n            \"cardNumber\": \"{{CARD_NUMBER}}\",\r\n            \"expiryDate\": \"{{CARD_EXP_DATE}}\"\r\n        },\r\n        \"timestamp\": \"{{CAPTURE_TIMESTAMP}}\",\r\n        \"approvalCode\":\"{{APPROVAL_CODE}}\",\r\n        \"operationContext\": {\r\n            \"links\": [\r\n                {\r\n                    \"rel\":\"{{REL}}\",\r\n                    \"href\":\"{{CAPT_HREF_LINK}}\"\r\n                }\r\n            ],\r\n            \"merchantAccount\": {\r\n                \"name\": \"{{MERCHANT_NAME}}\",\r\n                \"login\": \"{{MERCHANT_LOGIN}}\",\r\n                \"password\": {\r\n                    \"payload\": \"{{MERCHANT_PWD}}\"\r\n                }\r\n            },\r\n            \"acquirerInformation\": {\r\n                \"acquirerBin\": \"{{ACQUIRER_BIN}}\",\r\n                \"acquirerCountry\": \"{{ACQUIRER_COUNTRY}}\"\r\n            }\r\n        }\r\n    }\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}",
+									"host": [
+										"{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}"
+									]
+								},
+								"description": "This request performs a partial capture operation with minimum fields."
+							},
+							"response": []
+						}
+					],
+					"description": "This usecase performs a partial capture. If the provider does not allow partial/multiple capture it should triggers an error."
+				},
+				{
+					"name": "Partial refund not allowed",
+					"item": [
+						{
+							"name": "Author (Partial refund not allowed)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"\r",
+											"var jsonData = null;\r",
+											"try {\r",
+											"    // TEST BODY CONTENT and VALUES\r",
+											"    jsonData = pm.response.json().data;\r",
+											"\r",
+											"    // get request body param values\r",
+											"    const bodyRequestData = JSON.parse(pm.request.body).data;\r",
+											"\r",
+											"    // SAVING ID FOR NEXT OPERATIONS\r",
+											"    pm.environment.set(\"PARENT_OPERATION_ID\", jsonData.id);\r",
+											"\r",
+											"    // SAVING APPROVAL CODE FOR NEXT OPERATIONS\r",
+											"    pm.environment.set(\"APPROVAL_CODE\", jsonData.approvalCode);\r",
+											"\r",
+											"    // TEST CONTENT-TYPE\r",
+											"    const contentTypeHeader = pm.response.headers.get(\"Content-Type\");\r",
+											"    const expectedHeader = \"application/vnd.amadeus+json\";\r",
+											"    pm.test(\"Content-Type\", function(){\r",
+											"        pm.expect(contentTypeHeader).to.contain(expectedHeader);\r",
+											"    })\r",
+											"\r",
+											"    // TEST STATUS\r",
+											"    pm.test(\"Status code\", function () {\r",
+											"            pm.response.to.have.status(201);\r",
+											"        });\r",
+											"    \r",
+											"    // TEST APPROVAL CODE\r",
+											"    pm.test(\"ApprovalCode\", function(){\r",
+											"    pm.expect(jsonData.approvalCode).to.match(/\\d{6,8}/);\r",
+											"    pm.expect(jsonData.approvalCode.length >= 6 && jsonData.approvalCode.length <= 8).to.be.true;\r",
+											"    });\r",
+											"\r",
+											"    // TEST VENDOR CODE\r",
+											"     pm.test(\"Vendor code\", function(){\r",
+											"        pm.expect(jsonData.card.vendorCode).to.eql(bodyRequestData.card.vendorCode);\r",
+											"    });\r",
+											"\r",
+											"    // TEST CVV\r",
+											"    if (jsonData.cvv !== undefined) {\r",
+											"        pm.test(\"Cvv\", function(){\r",
+											"            pm.expect(jsonData.card.cvv).to.eql(bodyRequestData.card.cvv);\r",
+											"        });\r",
+											"    } else {\r",
+											"    };\r",
+											"\r",
+											"    // TEST EXPIRY DATE\r",
+											"    if (jsonData.card.expiryDate !== undefined) {\r",
+											"        pm.test(\"ExpiryDate\", function(){\r",
+											"            pm.expect(jsonData.card.expiryDate).to.eql(bodyRequestData.card.expiryDate);\r",
+											"        });\r",
+											"    } else {\r",
+											"    };\r",
+											"    \r",
+											"} catch(error)\r",
+											"{}\r",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"postman.setEnvironmentVariable('REQUEST_TYPE', '/outpayce/v1/authorizations/');\r",
+											"postman.setEnvironmentVariable('AUTHORIZATION_TYPE', 'AUTHORIZATION_ONLY');"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "{{CONTENT_TYPE}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"data\": {\r\n        \"card\": {\r\n            \"vendorCode\": \"{{VENDOR_CODE}}\",\r\n            \"cardNumber\": \"{{CARD_NUMBER}}\",\r\n            \"cvv\": \"{{CARD_CVV}}\",\r\n            \"expiryDate\": \"{{CARD_EXP_DATE}}\"\r\n        },\r\n        \"id\": \"{{ID}}\",\r\n        \"method\": \"CARD\",\r\n        \"timestamp\": \"{{AUTHOR_TIMESTAMP}}\",\r\n        \"authorizationType\": \"{{AUTHORIZATION_TYPE}}\",\r\n        \"operationContext\": {\r\n            \"acquirerInformation\": {\r\n                \"acquirerCountry\": \"{{ACQUIRER_COUNTRY}}\",\r\n                \"acquirerBin\": \"{{ACQUIRER_BIN}}\"\r\n            },\r\n            \"merchantAccount\": {\r\n                \"name\": \"{{MERCHANT_NAME}}\",\r\n                \"login\": \"{{MERCHANT_LOGIN}}\",\r\n                \"password\": {\r\n                    \"payload\": \"{{MERCHANT_PWD}}\"\r\n                }\r\n            }    \r\n        },\r\n        \"amount\": {\r\n            \"value\": \"{{AMOUNT_VALUE_AUTH}}\",\r\n            \"currencyCode\": \"{{CURRENCY}}\"\r\n        }\r\n    }\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}",
+									"host": [
+										"{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}"
+									]
+								},
+								"description": "This request performs an authorization operation with the minimum fields."
+							},
+							"response": []
+						},
+						{
+							"name": "Capture (Partial refund not allowed)",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"postman.setEnvironmentVariable('REQUEST_TYPE', '/outpayce/v1/captures/');\r",
+											"// SAVING ID FOR NEXT OPERATIONS\r",
+											"    const id = pm.environment.get(\"PARENT_OPERATION_ID\");\r",
+											"    pm.environment.set(\"PARENT_OPERATION_ID_PARTIAL\", id);\r",
+											"\r",
+											"// SETTING PARTIAL CAPTURE AMOUNT\r",
+											"    const amount_capt = pm.environment.get(\"AMOUNT_VALUE_AUTH\");\r",
+											"    pm.environment.set(\"AMOUNT_VALUE_CAPT\", amount_capt);"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = null;\r",
+											"try {\r",
+											"    // TEST BODY CONTENT and VALUES\r",
+											"    jsonData = pm.response.json().data;\r",
+											"\r",
+											"    // get request body param values\r",
+											"    const bodyRequestData = JSON.parse(pm.request.body).data;\r",
+											"\r",
+											"    // TEST CONTENT-TYPE\r",
+											"    const contentTypeHeader = pm.response.headers.get(\"Content-Type\");\r",
+											"    const expectedHeader = \"application/vnd.amadeus+json\";\r",
+											"    pm.test(\"Content-Type\", function(){\r",
+											"        pm.expect(contentTypeHeader).to.contain(expectedHeader);\r",
+											"    })\r",
+											"\r",
+											"    // TEST HTTP STATUS\r",
+											"    pm.test(\"Http status code\", function () {\r",
+											"            pm.response.to.have.status(201);\r",
+											"        });\r",
+											"\r",
+											"    // TEST METHOD\r",
+											"    pm.test(\"Method\", function(){\r",
+											"        pm.expect(jsonData.method).to.eql(bodyRequestData.method);\r",
+											"    });\r",
+											"\r",
+											"    // TEST TIMESTAMP\r",
+											"    const regexPattern = /\\d{4}-[01]\\d-[0-3]\\dT[0-2]\\d:[0-5]\\d:[0-5]\\d([+-][0-2]\\d:[0-5]\\d|Z)/\r",
+											"    if (jsonData.timestamp !== undefined) {\r",
+											"        pm.test(\"Timestamp\", function(){\r",
+											"            pm.expect(jsonData.timestamp).to.match(regexPattern);\r",
+											"        });\r",
+											"    } else {\r",
+											"    };\r",
+											"\r",
+											"    // TEST PARENT OPERATION ID\r",
+											"    pm.test(\"Parent operation ID\", function () {\r",
+											"        pm.expect(jsonData.parentOperationId).to.eql(bodyRequestData.parentOperationId);\r",
+											"    });\r",
+											"\r",
+											"    // TEST AMOUNT\r",
+											"    pm.test(\"Amount\", function(){\r",
+											"        pm.expect(jsonData.amount.value).to.eql(bodyRequestData.amount.value);\r",
+											"    });\r",
+											"    // TEST CURRENCY\r",
+											"    pm.test(\"Currency\", function(){\r",
+											"        pm.expect(jsonData.amount.currencyCode).to.eql(bodyRequestData.amount.currencyCode);\r",
+											"    });\r",
+											"    \r",
+											"    // TEST CAPTURE STATUS\r",
+											"    pm.test(\"Capture status\", function(){\r",
+											"        pm.expect(jsonData.status).to.eql(\"RECEIVED\");\r",
+											"    });\r",
+											"    \r",
+											"} catch(error)\r",
+											"{}\r",
+											"\r",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "{{CONTENT_TYPE}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"data\": {\r\n        \"id\": \"{{ID}}\",\r\n        \"parentOperationId\": \"{{PARENT_OPERATION_ID}}\",\r\n        \"amount\": {\r\n            \"value\": \"{{AMOUNT_VALUE_CAPT}}\",\r\n            \"currencyCode\": \"{{CURRENCY}}\"\r\n        },\r\n        \"method\": \"CARD\",\r\n        \"card\": {\r\n            \"vendorCode\": \"{{VENDOR_CODE}}\",\r\n            \"cardNumber\": \"{{CARD_NUMBER}}\",\r\n            \"expiryDate\": \"{{CARD_EXP_DATE}}\"\r\n        },\r\n        \"timestamp\": \"{{CAPTURE_TIMESTAMP}}\",\r\n        \"approvalCode\":\"{{APPROVAL_CODE}}\",\r\n        \"operationContext\": {\r\n            \"links\": [\r\n                {\r\n                    \"rel\":\"{{REL}}\",\r\n                    \"href\":\"{{CAPT_HREF_LINK}}\"\r\n                }\r\n            ],\r\n            \"merchantAccount\": {\r\n                \"name\": \"{{MERCHANT_NAME}}\",\r\n                \"login\": \"{{MERCHANT_LOGIN}}\",\r\n                \"password\": {\r\n                    \"payload\": \"{{MERCHANT_PWD}}\"\r\n                }\r\n            },\r\n            \"acquirerInformation\": {\r\n                \"acquirerBin\": \"{{ACQUIRER_BIN}}\",\r\n                \"acquirerCountry\": \"{{ACQUIRER_COUNTRY}}\"\r\n            }\r\n        }\r\n    }\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}",
+									"host": [
+										"{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}"
+									]
+								},
+								"description": "This request performs a capture operation with the minimum fields."
+							},
+							"response": []
+						},
+						{
+							"name": "Refund (Partial refund not allowed)",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"postman.setEnvironmentVariable('REQUEST_TYPE', '/outpayce/v1/refunds/');\r",
+											"\r",
+											"const refundAmount = pm.environment.get(\"AMOUNT_VALUE_AUTH\") / 2;\r",
+											"pm.environment.set(\"AMOUNT_VALUE_REF\", refundAmount);"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = null;\r",
+											"try {\r",
+											"\r",
+											"    // TEST CONTENT-TYPE\r",
+											"    const contentTypeHeader = pm.response.headers.get(\"Content-Type\");\r",
+											"    const expectedHeader = \"application/vnd.amadeus+json\";\r",
+											"    pm.test(\"Content-Type\", function(){\r",
+											"        pm.expect(contentTypeHeader).to.contain(expectedHeader);\r",
+											"    })\r",
+											"\r",
+											"    // TEST STATUS\r",
+											"    pm.test(\"Status code is error code\", function () {\r",
+											"            pm.expect(pm.response.code).to.be.above(399);\r",
+											"            return true;\r",
+											"        });\r",
+											"\r",
+											"} catch(error)\r",
+											"{}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "{{CONTENT_TYPE}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"data\": {\r\n        \"id\": \"{{ID}}\",\r\n        \"parentOperationId\": \"{{PARENT_OPERATION_ID}}\",\r\n        \"amount\": {\r\n            \"value\": \"{{AMOUNT_VALUE_REF}}\",\r\n            \"currencyCode\": \"{{CURRENCY}}\"\r\n        },\r\n        \"timestamp\": \"{{REFUND_TIMESTAMP}}\",\r\n        \"method\": \"CARD\",\r\n        \"card\": {\r\n            \"vendorCode\": \"{{VENDOR_CODE}}\",\r\n            \"cardNumber\": \"{{CARD_NUMBER}}\",\r\n            \"expiryDate\": \"{{CARD_EXP_DATE}}\"\r\n        },\r\n        \"operationContext\": {\r\n            \"merchantAccount\": {\r\n                \"name\": \"{{MERCHANT_NAME}}\",\r\n                \"login\": \"{{MERCHANT_LOGIN}}\",\r\n                \"password\": {\r\n                    \"payload\": \"{{MERCHANT_PWD}}\"\r\n                }\r\n            },\r\n            \"acquirerInformation\": {\r\n                \"acquirerBin\": \"{{ACQUIRER_BIN}}\",\r\n                \"acquirerCountry\": \"{{ACQUIRER_COUNTRY}}\"\r\n            },\r\n            \"links\": [\r\n                {\r\n                    \"rel\":\"{{REL}}\",\r\n                    \"href\":\"{{REF_HREF_LINK}}\"\r\n                }\r\n            ]\r\n        }\r\n    }\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}",
+									"host": [
+										"{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}"
+									]
+								},
+								"description": "This request performs a refund operation with the minimum fields."
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Over amount capture",
+					"item": [
+						{
+							"name": "Author (Over amount capture)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"\r",
+											"var jsonData = null;\r",
+											"try {\r",
+											"    // TEST BODY CONTENT and VALUES\r",
+											"    jsonData = pm.response.json().data;\r",
+											"\r",
+											"    // get request body param values\r",
+											"    const bodyRequestData = JSON.parse(pm.request.body).data;\r",
+											"\r",
+											"    // SAVING ID FOR NEXT OPERATIONS\r",
+											"    pm.environment.set(\"PARENT_OPERATION_ID\", jsonData.id);\r",
+											"\r",
+											"    // SAVING APPROVAL CODE FOR NEXT OPERATIONS\r",
+											"    pm.environment.set(\"APPROVAL_CODE\", jsonData.approvalCode);\r",
+											"\r",
+											"    // TEST CONTENT-TYPE\r",
+											"    const contentTypeHeader = pm.response.headers.get(\"Content-Type\");\r",
+											"    const expectedHeader = \"application/vnd.amadeus+json\";\r",
+											"    pm.test(\"Content-Type\", function(){\r",
+											"        pm.expect(contentTypeHeader).to.contain(expectedHeader);\r",
+											"    })\r",
+											"\r",
+											"    // TEST STATUS\r",
+											"    pm.test(\"Status code\", function () {\r",
+											"            pm.response.to.have.status(201);\r",
+											"        });\r",
+											"    \r",
+											"    // TEST APPROVAL CODE\r",
+											"    pm.test(\"ApprovalCode\", function(){\r",
+											"    pm.expect(jsonData.approvalCode).to.match(/\\d{6,8}/);\r",
+											"    pm.expect(jsonData.approvalCode.length >= 6 && jsonData.approvalCode.length <= 8).to.be.true;\r",
+											"    });\r",
+											"\r",
+											"    // TEST VENDOR CODE\r",
+											"     pm.test(\"Vendor code\", function(){\r",
+											"        pm.expect(jsonData.card.vendorCode).to.eql(bodyRequestData.card.vendorCode);\r",
+											"    });\r",
+											"\r",
+											"    // TEST CVV\r",
+											"    if (jsonData.cvv !== undefined) {\r",
+											"        pm.test(\"Cvv\", function(){\r",
+											"            pm.expect(jsonData.card.cvv).to.eql(bodyRequestData.card.cvv);\r",
+											"        });\r",
+											"    } else {\r",
+											"    };\r",
+											"\r",
+											"    // TEST EXPIRY DATE\r",
+											"    if (jsonData.card.expiryDate !== undefined) {\r",
+											"        pm.test(\"ExpiryDate\", function(){\r",
+											"            pm.expect(jsonData.card.expiryDate).to.eql(bodyRequestData.card.expiryDate);\r",
+											"        });\r",
+											"    } else {\r",
+											"    };\r",
+											"    \r",
+											"} catch(error)\r",
+											"{}\r",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"postman.setEnvironmentVariable('REQUEST_TYPE', '/outpayce/v1/authorizations/');\r",
+											"postman.setEnvironmentVariable('AUTHORIZATION_TYPE', 'AUTHORIZATION_ONLY');"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "{{CONTENT_TYPE}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"data\": {\r\n        \"card\": {\r\n            \"vendorCode\": \"{{VENDOR_CODE}}\",\r\n            \"cardNumber\": \"{{CARD_NUMBER}}\",\r\n            \"cvv\": \"{{CARD_CVV}}\",\r\n            \"expiryDate\": \"{{CARD_EXP_DATE}}\"\r\n        },\r\n        \"id\": \"{{ID}}\",\r\n        \"method\": \"CARD\",\r\n        \"timestamp\": \"{{AUTHOR_TIMESTAMP}}\",\r\n        \"authorizationType\": \"{{AUTHORIZATION_TYPE}}\",\r\n        \"operationContext\": {\r\n            \"acquirerInformation\": {\r\n                \"acquirerCountry\": \"{{ACQUIRER_COUNTRY}}\",\r\n                \"acquirerBin\": \"{{ACQUIRER_BIN}}\"\r\n            },\r\n            \"merchantAccount\": {\r\n                \"name\": \"{{MERCHANT_NAME}}\",\r\n                \"login\": \"{{MERCHANT_LOGIN}}\",\r\n                \"password\": {\r\n                    \"payload\": \"{{MERCHANT_PWD}}\"\r\n                }\r\n            }    \r\n        },\r\n        \"amount\": {\r\n            \"value\": \"{{AMOUNT_VALUE_AUTH}}\",\r\n            \"currencyCode\": \"{{CURRENCY}}\"\r\n        }\r\n    }\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}",
+									"host": [
+										"{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}"
+									]
+								},
+								"description": "This request performs an authorization operation with the minimum fields."
+							},
+							"response": []
+						},
+						{
+							"name": "Capture (Over amount capture)",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"postman.setEnvironmentVariable('REQUEST_TYPE', '/outpayce/v1/captures/');\r",
+											"const captureAmount = pm.environment.get(\"AMOUNT_VALUE_AUTH\") * 2;\r",
+											"pm.environment.set(\"AMOUNT_VALUE_CAPT\", captureAmount);"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = null;\r",
+											"try {\r",
+											"\r",
+											"    // TEST CONTENT-TYPE\r",
+											"    const contentTypeHeader = pm.response.headers.get(\"Content-Type\");\r",
+											"    const expectedHeader = \"application/vnd.amadeus+json\";\r",
+											"    pm.test(\"Content-Type\", function(){\r",
+											"        pm.expect(contentTypeHeader).to.contain(expectedHeader);\r",
+											"    })\r",
+											"\r",
+											"    // TEST STATUS\r",
+											"    pm.test(\"Status code is error code\", function () {\r",
+											"            pm.expect(pm.response.code).to.be.above(399);\r",
+											"            return true;\r",
+											"        });\r",
+											"\r",
+											"} catch(error)\r",
+											"{}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "{{CONTENT_TYPE}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"data\": {\r\n        \"id\": \"{{ID}}\",\r\n        \"parentOperationId\": \"{{PARENT_OPERATION_ID}}\",\r\n        \"amount\": {\r\n            \"value\": \"{{AMOUNT_VALUE_CAPT}}\",\r\n            \"currencyCode\": \"{{CURRENCY}}\"\r\n        },\r\n        \"method\": \"CARD\",\r\n        \"card\": {\r\n            \"vendorCode\": \"{{VENDOR_CODE}}\",\r\n            \"cardNumber\": \"{{CARD_NUMBER}}\",\r\n            \"expiryDate\": \"{{CARD_EXP_DATE}}\"\r\n        },\r\n        \"timestamp\": \"{{CAPTURE_TIMESTAMP}}\",\r\n        \"approvalCode\":\"{{APPROVAL_CODE}}\",\r\n        \"operationContext\": {\r\n            \"links\": [\r\n                {\r\n                    \"rel\":\"{{REL}}\",\r\n                    \"href\":\"{{CAPT_HREF_LINK}}\"\r\n                }\r\n            ],\r\n            \"merchantAccount\": {\r\n                \"name\": \"{{MERCHANT_NAME}}\",\r\n                \"login\": \"{{MERCHANT_LOGIN}}\",\r\n                \"password\": {\r\n                    \"payload\": \"{{MERCHANT_PWD}}\"\r\n                }\r\n            },\r\n            \"acquirerInformation\": {\r\n                \"acquirerBin\": \"{{ACQUIRER_BIN}}\",\r\n                \"acquirerCountry\": \"{{ACQUIRER_COUNTRY}}\"\r\n            }\r\n        }\r\n    }\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}",
+									"host": [
+										"{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}"
+									]
+								},
+								"description": "This request performs a capture operation with minimum fields, with an amount that is twice the value of the related authorization."
+							},
+							"response": []
+						}
+					],
+					"description": "This usecase performs a capture with a higher amount than the related authorization."
+				},
+				{
+					"name": "Over amount refund",
+					"item": [
+						{
+							"name": "Author (Over amount refund)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"\r",
+											"var jsonData = null;\r",
+											"try {\r",
+											"    // TEST BODY CONTENT and VALUES\r",
+											"    jsonData = pm.response.json().data;\r",
+											"\r",
+											"    // get request body param values\r",
+											"    const bodyRequestData = JSON.parse(pm.request.body).data;\r",
+											"\r",
+											"    // SAVING ID FOR NEXT OPERATIONS\r",
+											"    pm.environment.set(\"PARENT_OPERATION_ID\", jsonData.id);\r",
+											"\r",
+											"    // SAVING APPROVAL CODE FOR NEXT OPERATIONS\r",
+											"    pm.environment.set(\"APPROVAL_CODE\", jsonData.approvalCode);\r",
+											"\r",
+											"    // TEST CONTENT-TYPE\r",
+											"    const contentTypeHeader = pm.response.headers.get(\"Content-Type\");\r",
+											"    const expectedHeader = \"application/vnd.amadeus+json\";\r",
+											"    pm.test(\"Content-Type\", function(){\r",
+											"        pm.expect(contentTypeHeader).to.contain(expectedHeader);\r",
+											"    })\r",
+											"\r",
+											"    // TEST STATUS\r",
+											"    pm.test(\"Status code\", function () {\r",
+											"            pm.response.to.have.status(201);\r",
+											"        });\r",
+											"    \r",
+											"    // TEST APPROVAL CODE\r",
+											"    pm.test(\"ApprovalCode\", function(){\r",
+											"    pm.expect(jsonData.approvalCode).to.match(/\\d{6,8}/);\r",
+											"    pm.expect(jsonData.approvalCode.length >= 6 && jsonData.approvalCode.length <= 8).to.be.true;\r",
+											"    });\r",
+											"\r",
+											"    // TEST VENDOR CODE\r",
+											"     pm.test(\"Vendor code\", function(){\r",
+											"        pm.expect(jsonData.card.vendorCode).to.eql(bodyRequestData.card.vendorCode);\r",
+											"    });\r",
+											"\r",
+											"    // TEST CVV\r",
+											"    if (jsonData.cvv !== undefined) {\r",
+											"        pm.test(\"Cvv\", function(){\r",
+											"            pm.expect(jsonData.card.cvv).to.eql(bodyRequestData.card.cvv);\r",
+											"        });\r",
+											"    } else {\r",
+											"    };\r",
+											"\r",
+											"    // TEST EXPIRY DATE\r",
+											"    if (jsonData.card.expiryDate !== undefined) {\r",
+											"        pm.test(\"ExpiryDate\", function(){\r",
+											"            pm.expect(jsonData.card.expiryDate).to.eql(bodyRequestData.card.expiryDate);\r",
+											"        });\r",
+											"    } else {\r",
+											"    };\r",
+											"    \r",
+											"} catch(error)\r",
+											"{}\r",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"postman.setEnvironmentVariable('REQUEST_TYPE', '/outpayce/v1/authorizations/');\r",
+											"postman.setEnvironmentVariable('AUTHORIZATION_TYPE', 'AUTHORIZATION_ONLY');"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "{{CONTENT_TYPE}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"data\": {\r\n        \"card\": {\r\n            \"vendorCode\": \"{{VENDOR_CODE}}\",\r\n            \"cardNumber\": \"{{CARD_NUMBER}}\",\r\n            \"cvv\": \"{{CARD_CVV}}\",\r\n            \"expiryDate\": \"{{CARD_EXP_DATE}}\"\r\n        },\r\n        \"id\": \"{{ID}}\",\r\n        \"method\": \"CARD\",\r\n        \"timestamp\": \"{{AUTHOR_TIMESTAMP}}\",\r\n        \"authorizationType\": \"{{AUTHORIZATION_TYPE}}\",\r\n        \"operationContext\": {\r\n            \"acquirerInformation\": {\r\n                \"acquirerCountry\": \"{{ACQUIRER_COUNTRY}}\",\r\n                \"acquirerBin\": \"{{ACQUIRER_BIN}}\"\r\n            },\r\n            \"merchantAccount\": {\r\n                \"name\": \"{{MERCHANT_NAME}}\",\r\n                \"login\": \"{{MERCHANT_LOGIN}}\",\r\n                \"password\": {\r\n                    \"payload\": \"{{MERCHANT_PWD}}\"\r\n                }\r\n            }    \r\n        },\r\n        \"amount\": {\r\n            \"value\": \"{{AMOUNT_VALUE_AUTH}}\",\r\n            \"currencyCode\": \"{{CURRENCY}}\"\r\n        }\r\n    }\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}",
+									"host": [
+										"{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}"
+									]
+								},
+								"description": "This request performs an authorization operation with the minimum fields."
+							},
+							"response": []
+						},
+						{
+							"name": "Capture (Over amount refund)",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"postman.setEnvironmentVariable('REQUEST_TYPE', '/outpayce/v1/captures/');\r",
+											"// SAVING ID FOR NEXT OPERATIONS\r",
+											"    const id = pm.environment.get(\"PARENT_OPERATION_ID\");\r",
+											"    pm.environment.set(\"PARENT_OPERATION_ID_PARTIAL\", id);\r",
+											"\r",
+											"// SETTING PARTIAL CAPTURE AMOUNT\r",
+											"    const amount_capt = pm.environment.get(\"AMOUNT_VALUE_AUTH\");\r",
+											"    pm.environment.set(\"AMOUNT_VALUE_CAPT\", amount_capt);"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = null;\r",
+											"try {\r",
+											"    // TEST BODY CONTENT and VALUES\r",
+											"    jsonData = pm.response.json().data;\r",
+											"\r",
+											"    // get request body param values\r",
+											"    const bodyRequestData = JSON.parse(pm.request.body).data;\r",
+											"\r",
+											"    // TEST CONTENT-TYPE\r",
+											"    const contentTypeHeader = pm.response.headers.get(\"Content-Type\");\r",
+											"    const expectedHeader = \"application/vnd.amadeus+json\";\r",
+											"    pm.test(\"Content-Type\", function(){\r",
+											"        pm.expect(contentTypeHeader).to.contain(expectedHeader);\r",
+											"    })\r",
+											"\r",
+											"    // TEST HTTP STATUS\r",
+											"    pm.test(\"Http status code\", function () {\r",
+											"            pm.response.to.have.status(201);\r",
+											"        });\r",
+											"\r",
+											"    // TEST METHOD\r",
+											"    pm.test(\"Method\", function(){\r",
+											"        pm.expect(jsonData.method).to.eql(bodyRequestData.method);\r",
+											"    });\r",
+											"\r",
+											"    // TEST TIMESTAMP\r",
+											"    const regexPattern = /\\d{4}-[01]\\d-[0-3]\\dT[0-2]\\d:[0-5]\\d:[0-5]\\d([+-][0-2]\\d:[0-5]\\d|Z)/\r",
+											"    if (jsonData.timestamp !== undefined) {\r",
+											"        pm.test(\"Timestamp\", function(){\r",
+											"            pm.expect(jsonData.timestamp).to.match(regexPattern);\r",
+											"        });\r",
+											"    } else {\r",
+											"    };\r",
+											"\r",
+											"    // TEST PARENT OPERATION ID\r",
+											"    pm.test(\"Parent operation ID\", function () {\r",
+											"        pm.expect(jsonData.parentOperationId).to.eql(bodyRequestData.parentOperationId);\r",
+											"    });\r",
+											"\r",
+											"    // TEST AMOUNT\r",
+											"    pm.test(\"Amount\", function(){\r",
+											"        pm.expect(jsonData.amount.value).to.eql(bodyRequestData.amount.value);\r",
+											"    });\r",
+											"    // TEST CURRENCY\r",
+											"    pm.test(\"Currency\", function(){\r",
+											"        pm.expect(jsonData.amount.currencyCode).to.eql(bodyRequestData.amount.currencyCode);\r",
+											"    });\r",
+											"    \r",
+											"    // TEST CAPTURE STATUS\r",
+											"    pm.test(\"Capture status\", function(){\r",
+											"        pm.expect(jsonData.status).to.eql(\"RECEIVED\");\r",
+											"    });\r",
+											"    \r",
+											"} catch(error)\r",
+											"{}\r",
+											"\r",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "{{CONTENT_TYPE}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"data\": {\r\n        \"id\": \"{{ID}}\",\r\n        \"parentOperationId\": \"{{PARENT_OPERATION_ID}}\",\r\n        \"amount\": {\r\n            \"value\": \"{{AMOUNT_VALUE_CAPT}}\",\r\n            \"currencyCode\": \"{{CURRENCY}}\"\r\n        },\r\n        \"method\": \"CARD\",\r\n        \"card\": {\r\n            \"vendorCode\": \"{{VENDOR_CODE}}\",\r\n            \"cardNumber\": \"{{CARD_NUMBER}}\",\r\n            \"expiryDate\": \"{{CARD_EXP_DATE}}\"\r\n        },\r\n        \"timestamp\": \"{{CAPTURE_TIMESTAMP}}\",\r\n        \"approvalCode\":\"{{APPROVAL_CODE}}\",\r\n        \"operationContext\": {\r\n            \"links\": [\r\n                {\r\n                    \"rel\":\"{{REL}}\",\r\n                    \"href\":\"{{CAPT_HREF_LINK}}\"\r\n                }\r\n            ],\r\n            \"merchantAccount\": {\r\n                \"name\": \"{{MERCHANT_NAME}}\",\r\n                \"login\": \"{{MERCHANT_LOGIN}}\",\r\n                \"password\": {\r\n                    \"payload\": \"{{MERCHANT_PWD}}\"\r\n                }\r\n            },\r\n            \"acquirerInformation\": {\r\n                \"acquirerBin\": \"{{ACQUIRER_BIN}}\",\r\n                \"acquirerCountry\": \"{{ACQUIRER_COUNTRY}}\"\r\n            }\r\n        }\r\n    }\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}",
+									"host": [
+										"{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}"
+									]
+								},
+								"description": "This request performs a capture operation with the minimum fields."
+							},
+							"response": []
+						},
+						{
+							"name": "Refund (Over amount refund)",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"postman.setEnvironmentVariable('REQUEST_TYPE', '/outpayce/v1/refunds/');\r",
+											"\r",
+											"const refundAmount = pm.environment.get(\"AMOUNT_VALUE_AUTH\") * 2;\r",
+											"pm.environment.set(\"AMOUNT_VALUE_REF\", refundAmount);"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = null;\r",
+											"try {\r",
+											"\r",
+											"    // TEST CONTENT-TYPE\r",
+											"    const contentTypeHeader = pm.response.headers.get(\"Content-Type\");\r",
+											"    const expectedHeader = \"application/vnd.amadeus+json\";\r",
+											"    pm.test(\"Content-Type\", function(){\r",
+											"        pm.expect(contentTypeHeader).to.contain(expectedHeader);\r",
+											"    })\r",
+											"\r",
+											"    // TEST STATUS\r",
+											"    pm.test(\"Status code is error code\", function () {\r",
+											"            pm.expect(pm.response.code).to.be.above(399);\r",
+											"            return true;\r",
+											"        });\r",
+											"\r",
+											"} catch(error)\r",
+											"{}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "{{CONTENT_TYPE}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"data\": {\r\n        \"id\": \"{{ID}}\",\r\n        \"parentOperationId\": \"{{PARENT_OPERATION_ID}}\",\r\n        \"amount\": {\r\n            \"value\": \"{{AMOUNT_VALUE_REF}}\",\r\n            \"currencyCode\": \"{{CURRENCY}}\"\r\n        },\r\n        \"timestamp\": \"{{REFUND_TIMESTAMP}}\",\r\n        \"method\": \"CARD\",\r\n        \"card\": {\r\n            \"vendorCode\": \"{{VENDOR_CODE}}\",\r\n            \"cardNumber\": \"{{CARD_NUMBER}}\",\r\n            \"expiryDate\": \"{{CARD_EXP_DATE}}\"\r\n        },\r\n        \"operationContext\": {\r\n            \"merchantAccount\": {\r\n                \"name\": \"{{MERCHANT_NAME}}\",\r\n                \"login\": \"{{MERCHANT_LOGIN}}\",\r\n                \"password\": {\r\n                    \"payload\": \"{{MERCHANT_PWD}}\"\r\n                }\r\n            },\r\n            \"acquirerInformation\": {\r\n                \"acquirerBin\": \"{{ACQUIRER_BIN}}\",\r\n                \"acquirerCountry\": \"{{ACQUIRER_COUNTRY}}\"\r\n            },\r\n            \"links\": [\r\n                {\r\n                    \"rel\":\"{{REL}}\",\r\n                    \"href\":\"{{REF_HREF_LINK}}\"\r\n                }\r\n            ]\r\n        }\r\n    }\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}",
+									"host": [
+										"{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}"
+									]
+								},
+								"description": "This request performs a refund operation with the minimum fields."
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Refund on non-captured payment",
+					"item": [
+						{
+							"name": "Author (Refund on non-captured payment)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"\r",
+											"var jsonData = null;\r",
+											"try {\r",
+											"    // TEST BODY CONTENT and VALUES\r",
+											"    jsonData = pm.response.json().data;\r",
+											"\r",
+											"    // get request body param values\r",
+											"    const bodyRequestData = JSON.parse(pm.request.body).data;\r",
+											"\r",
+											"    // SAVING ID FOR NEXT OPERATIONS\r",
+											"    pm.environment.set(\"PARENT_OPERATION_ID\", jsonData.id);\r",
+											"\r",
+											"    // SAVING APPROVAL CODE FOR NEXT OPERATIONS\r",
+											"    pm.environment.set(\"APPROVAL_CODE\", jsonData.approvalCode);\r",
+											"\r",
+											"    // TEST CONTENT-TYPE\r",
+											"    const contentTypeHeader = pm.response.headers.get(\"Content-Type\");\r",
+											"    const expectedHeader = \"application/vnd.amadeus+json\";\r",
+											"    pm.test(\"Content-Type\", function(){\r",
+											"        pm.expect(contentTypeHeader).to.contain(expectedHeader);\r",
+											"    })\r",
+											"\r",
+											"    // TEST STATUS\r",
+											"    pm.test(\"Status code\", function () {\r",
+											"            pm.response.to.have.status(201);\r",
+											"        });\r",
+											"    \r",
+											"    // TEST APPROVAL CODE\r",
+											"    pm.test(\"ApprovalCode\", function(){\r",
+											"    pm.expect(jsonData.approvalCode).to.match(/\\d{6,8}/);\r",
+											"    pm.expect(jsonData.approvalCode.length >= 6 && jsonData.approvalCode.length <= 8).to.be.true;\r",
+											"    });\r",
+											"\r",
+											"    // TEST VENDOR CODE\r",
+											"     pm.test(\"Vendor code\", function(){\r",
+											"        pm.expect(jsonData.card.vendorCode).to.eql(bodyRequestData.card.vendorCode);\r",
+											"    });\r",
+											"\r",
+											"    // TEST CVV\r",
+											"    if (jsonData.cvv !== undefined) {\r",
+											"        pm.test(\"Cvv\", function(){\r",
+											"            pm.expect(jsonData.card.cvv).to.eql(bodyRequestData.card.cvv);\r",
+											"        });\r",
+											"    } else {\r",
+											"    };\r",
+											"\r",
+											"    // TEST EXPIRY DATE\r",
+											"    if (jsonData.card.expiryDate !== undefined) {\r",
+											"        pm.test(\"ExpiryDate\", function(){\r",
+											"            pm.expect(jsonData.card.expiryDate).to.eql(bodyRequestData.card.expiryDate);\r",
+											"        });\r",
+											"    } else {\r",
+											"    };\r",
+											"    \r",
+											"} catch(error)\r",
+											"{}\r",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"postman.setEnvironmentVariable('REQUEST_TYPE', '/outpayce/v1/authorizations/');\r",
+											"postman.setEnvironmentVariable('AUTHORIZATION_TYPE', 'AUTHORIZATION_ONLY');"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "{{CONTENT_TYPE}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"data\": {\r\n        \"card\": {\r\n            \"vendorCode\": \"{{VENDOR_CODE}}\",\r\n            \"cardNumber\": \"{{CARD_NUMBER}}\",\r\n            \"cvv\": \"{{CARD_CVV}}\",\r\n            \"expiryDate\": \"{{CARD_EXP_DATE}}\"\r\n        },\r\n        \"id\": \"{{ID}}\",\r\n        \"method\": \"CARD\",\r\n        \"timestamp\": \"{{AUTHOR_TIMESTAMP}}\",\r\n        \"authorizationType\": \"{{AUTHORIZATION_TYPE}}\",\r\n        \"operationContext\": {\r\n            \"acquirerInformation\": {\r\n                \"acquirerCountry\": \"{{ACQUIRER_COUNTRY}}\",\r\n                \"acquirerBin\": \"{{ACQUIRER_BIN}}\"\r\n            },\r\n            \"merchantAccount\": {\r\n                \"name\": \"{{MERCHANT_NAME}}\",\r\n                \"login\": \"{{MERCHANT_LOGIN}}\",\r\n                \"password\": {\r\n                    \"payload\": \"{{MERCHANT_PWD}}\"\r\n                }\r\n            }    \r\n        },\r\n        \"amount\": {\r\n            \"value\": \"{{AMOUNT_VALUE_AUTH}}\",\r\n            \"currencyCode\": \"{{CURRENCY}}\"\r\n        }\r\n    }\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}",
+									"host": [
+										"{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}"
+									]
+								},
+								"description": "This request performs an authorization operation with the minimum fields."
+							},
+							"response": []
+						},
+						{
+							"name": "Refund (Refund on non-captured payment))",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"postman.setEnvironmentVariable('REQUEST_TYPE', '/outpayce/v1/refunds/');\r",
+											"\r",
+											"const refundAmount = pm.environment.get(\"AMOUNT_VALUE_AUTH\");\r",
+											"pm.environment.set(\"AMOUNT_VALUE_REF\", refundAmount);"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = null;\r",
+											"try {\r",
+											"\r",
+											"    // TEST CONTENT-TYPE\r",
+											"    const contentTypeHeader = pm.response.headers.get(\"Content-Type\");\r",
+											"    const expectedHeader = \"application/vnd.amadeus+json\";\r",
+											"    pm.test(\"Content-Type\", function(){\r",
+											"        pm.expect(contentTypeHeader).to.contain(expectedHeader);\r",
+											"    })\r",
+											"\r",
+											"    // TEST STATUS\r",
+											"    pm.test(\"Status code is error code\", function () {\r",
+											"            pm.expect(pm.response.code).to.be.above(399);\r",
+											"            return true;\r",
+											"        });\r",
+											"\r",
+											"} catch(error)\r",
+											"{}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "{{CONTENT_TYPE}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"data\": {\r\n        \"id\": \"{{ID}}\",\r\n        \"parentOperationId\": \"{{PARENT_OPERATION_ID}}\",\r\n        \"amount\": {\r\n            \"value\": \"{{AMOUNT_VALUE_REF}}\",\r\n            \"currencyCode\": \"{{CURRENCY}}\"\r\n        },\r\n        \"timestamp\": \"{{REFUND_TIMESTAMP}}\",\r\n        \"method\": \"CARD\",\r\n        \"card\": {\r\n            \"vendorCode\": \"{{VENDOR_CODE}}\",\r\n            \"cardNumber\": \"{{CARD_NUMBER}}\",\r\n            \"expiryDate\": \"{{CARD_EXP_DATE}}\"\r\n        },\r\n        \"operationContext\": {\r\n            \"merchantAccount\": {\r\n                \"name\": \"{{MERCHANT_NAME}}\",\r\n                \"login\": \"{{MERCHANT_LOGIN}}\",\r\n                \"password\": {\r\n                    \"payload\": \"{{MERCHANT_PWD}}\"\r\n                }\r\n            },\r\n            \"acquirerInformation\": {\r\n                \"acquirerBin\": \"{{ACQUIRER_BIN}}\",\r\n                \"acquirerCountry\": \"{{ACQUIRER_COUNTRY}}\"\r\n            },\r\n            \"links\": [\r\n                {\r\n                    \"rel\":\"{{REL}}\",\r\n                    \"href\":\"{{REF_HREF_LINK}}\"\r\n                }\r\n            ]\r\n        }\r\n    }\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}",
+									"host": [
+										"{{BASE_URL}}{{REQUEST_TYPE}}{{ID}}"
+									]
+								},
+								"description": "This request performs a refund operation with the minimum fields."
+							},
+							"response": []
+						}
+					]
+				}
+			],
+			"description": "In this folder you'll find a list of self-service error handling test cases. Each error usecase can be directly executed with no modification at folder level or by executing the requests in the order displayed."
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// generate operation ID for each request",
+					"var uuid = require('uuid');",
+					"var id = uuid.v4();",
+					"postman.setEnvironmentVariable('ID', id);",
+					"",
+					"// Encode the username and password in Base64 format",
+					"const username = pm.environment.get(\"CONNECTION_LOGIN\")",
+					"const password = pm.environment.get(\"CONNECTION_PWD\")",
+					"// Concatenate the username and password with a colon separator",
+					"const credentials = username + \":\" + password;",
+					"",
+					"// Encode the credentials in Base64",
+					"const encodedCredentials = btoa(credentials);",
+					"",
+					"// Set the Authorization header with the encoded credentials",
+					"pm.request.headers.add({",
+					"  key: \"Authorization\",",
+					"  value: \"Basic \" + encodedCredentials,",
+					"});"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}

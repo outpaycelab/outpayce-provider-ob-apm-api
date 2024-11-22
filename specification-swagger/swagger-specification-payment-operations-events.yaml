@@ -1,0 +1,166 @@
+swagger: '2.0'
+info:
+  title: Outpayce Provider API Payment Operations Events
+  version: 0.2.1
+  contact:
+    name: Outpayce Provider API Discussions
+    url: 'https://github.com/outpaycelab/outpayce-provider-ob-api/discussions'
+    email: providerapi.support@outpayce.com
+  description: "**Preliminary Note:** This document aims at describing how to use the Amadeus JSON API for core Payment *Operation* status change notification through *Event* posting.\nIt is tailored for card only operations. This is an early alpha version of the API that therefore is prone to change and has no contract value.\nAmadeus APIs comply with Amadeus REST/JSON Rules & Guideline v1.3 and are based on *application/vnd.amadeus+json* [media type](https://www.iana.org/assignments/media-types/media-types.xhtml). For further details please refer to [Outpayce Github](https://github.com/outpaycelab).\n\n## Resource: *Operation Events*\nThe main resource used here is the '*Operation Events*' resource. An *Operation Event* is describing an event in the lifecycle of an *Operation*.\nCurrently, the operations supporting events are captures and refunds.\n\n## Quickstart Guide\n\n### 1. Pre-requisite - Operation creation\nOutpayce sent a payment operation to your system that accepted it. This operation is identified by its nature (i.e. capture or refund) and its *id*.\nIn the payload of the operation request, you received a *WEBHOOK_URL* to which you can post *Events*.\nThis *WEBHOOK_URL* respects the following pattern: https://{your-organization-name-in-outpayce}.payment.feeds.outpayce.com/{attributed-sap}/SPWREQ/v1/payment/3rd-party-gateway/{your-organization-name-in-outpayce}/{operation-collection}/{operation-id}/events.\nIn this pattern, *your-organization-name-in-outpayce* is the agreed name attributed by outpayce to you during the onboarding phase.\n*operation-collection* is the collection of the concerned operation nature. It is therefore either *captures* or *refunds*.\n*operation-id* is the identifier of the operation gnerated by Outpayce.\n\nFor more details about this step, please refer to the Payment Operations swagger.\n\n### 2. Notifying Outpayce of an Event\nYour system sends an event to Outpayce such as (here the example is a capture clearing event):\n```\nPOST https://{your-organization-name-in-outpayce}.payment.feeds.outpayce.com//{attributed-sap}/SPWREQ/v1/payment/3rd-party-gateway/{your-organization-name-in-outpayce}/{operation-collection}/{operation-id}/events\nContent-Type: application/vnd.amadeus+json\n...\n\n{\n    \"data\": {\n        \"triggerEventName\": \"CAPTURE_CLEARED\",\n        \"dateTime\": \"2033-12-31T04:54:00Z\"\n    }\n}\n```\n\nOutpayce parses the event and after processing it, returns the following acknowledgment response:\n```\nHTTP/1.1 200 OK\nContent-Type: application/vnd.amadeus+json\n\n{\n    \"data\": {\n        \"status\": \"ACKNOWLEDGED\"\n    }\n}\n```\n\nIn case of operation failure or denial, an event such as the following can be posted to Outpayce:\n\n  ```\nPOST https://{your-organization-name-in-outpayce}.payment.feeds.outpayce.com//{attributed-sap}/SPWREQ/v1/payment/3rd-party-gateway/{your-organization-name-in-outpayce}/{operation-collection}/{operation-id}/events\nContent-Type: application/vnd.amadeus+json\n...\n\n{\n    \"data\": {\n        \"triggerEventName\": \"CAPTURE_DENIAL\",\n        \"triggerEventReason\": \"FREE_TEXT\",\n        \"triggerEventCodedReason\": {\n            \"code\": \"12345\",\n            \"text\": \"12345_TEXT\"\n        }\n        \"dateTime\": \"2033-12-31T04:54:00Z\"\n    }\n}\n```\n\nWhere *triggerEventCodedReason* allows you to perform detailed data about the failure/denail along the more generic *triggerEventReason*.\n\n## API considerations\n\n### application/vnd.amadeus+json overall structure\nEach request/response body is enclosed in a JSON envelope. The set of root level keys of that envelope is limited and support the API consumer pre-interactions. The main root level key is _data_ in input or in successful responses, and _errors_ for failing responses.\n\nHere is an example of a successful response body:\n```\n{\n    \"warnings\": [\n        ...\n    ],\n    \"data\": {\n        ...\n    },\n    \"dictionaries\": {\n        ...\n    },\n    \"included\": [\n        ...\n    ],\n    \"meta\": {\n        ...\n    }\n}\n```\n\nAnd here is an example of a successful collection response body:\n```\n{\n    \"warnings\": [\n        ...\n    ],\n    \"data\": [\n        ...\n    ],\n    \"dictionaries\": {\n        ...\n    },\n    \"included\": [\n        ...\n    ],\n    \"meta\": {\n        ...\n    },\n}\n```\n\nPlease note that request bodies are not expected to contain warnings or errors.\n\nHere would be an example of a error response body:\n```  \n{\n    \"warnings\": [\n        ...\n    ],\n    \"errors\": [\n        ...\n    ],\n    \"meta\": {\n        ...\n    }\n}\n```\n\nWarnings are non-blocking issues encountered during processing. Errors are functionally blocking issues preventing a successful processing.\n\n### Semantic HTTP statuses\n\nIn this API, HTTP statuses are semantically applied.\n\nHere are the main successful ones to consider (non-exhaustive list):\n- **200 OK.** Processing of the operation is successful.\n\nAnd here are the main error categories returned (non-exhaustive list):\n- **400 Bad Request.** Problem reading or understanding request. Usually missing data or invalid requests.\n"
+host: your-organization-name-in-outpayce.payment.feeds.outpayce.com
+schemes:
+  - https
+produces:
+  - application/vnd.amadeus+json
+consumes:
+  - application/vnd.amadeus+json
+paths:
+  '/payment/3rd-party-gateway/{your-organization-name-in-outpayce}/{operation-collection}/{operation-id}/events':
+    parameters:
+      - type: string
+        name: your-organization-name-in-outpayce
+        in: path
+        required: true
+      - type: string
+        name: operation-id
+        in: path
+        required: true
+      - type: string
+        name: operation-collection
+        in: path
+        required: true
+    post:
+      tags:
+        - OperationEvent
+      summary: ''
+      description: This endpoints allows the posting of events regarding a specific payment operation
+      operationId: post-payment-3rd-party-gateway-third-party-operations-operation-id
+      responses:
+        '200':
+          description: OK
+          schema:
+            title: EventResponse
+            type: object
+            properties:
+              data:
+                type: object
+                properties:
+                  status:
+                    type: string
+        '400':
+          $ref: '#/responses/error-response-400'
+      parameters:
+        - in: body
+          name: body
+          schema:
+            type: object
+            title: EventPayload
+            properties:
+              data:
+                allOf:
+                  - $ref: '#/definitions/Event'
+                  - type: object
+          description: ''
+definitions:
+  Error:
+    type: object
+    description: The Error Definition
+    title: Error
+    properties:
+      status:
+        type: integer
+        description: 'The [HTTP status code](https://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml) of this response. This is present only in terminal errors which cause an unsuccessful response. In the case of multiple errors, they must all have the same status.'
+      code:
+        type: integer
+        description: 'A machine-readable error code, that will enable the API Consumers code to handle this type of error'
+      title:
+        type: string
+        description: 'An error title from the Canned Messages table with a 1:1 correspondence to the error code. This may be localized'
+      detail:
+        type: string
+        description: 'An easy-to-read explanation specific to this occurrence of the problem. It should give the API consumer an idea of what went wrong and how to recover from it. Like the title, this field’s value can be localized.'
+      source:
+        type: object
+        title: Error_Source
+        properties:
+          parameter:
+            type: string
+            description: The key of the URI path or query parameter that caused the error
+          pointer:
+            type: string
+            description: 'A JSON Pointer [RFC6901] to the associated entity in the request body that caused this error'
+          example:
+            type: string
+            description: A sample input to guide the user when resolving this issue
+  ErrorResponse:
+    title: Error Response
+    type: object
+    properties:
+      errors:
+        type: array
+        items:
+          $ref: '#/definitions/Error'
+  Event:
+    title: EventLog
+    type: object
+    description: The object representing one event and its details
+    properties:
+      triggerEventName:
+        type: string
+        description: |
+          Describes the nature of the event. We expect that this is the final status of the operation. The value should be one of the following:
+            - CAPTURE_CLEARED : both acquirer and issuer agreed on the clearing of the operation
+            - CAPTURE_FAILURE : a technical issue prevented the operation to be cleared
+            - CAPTURE_DENIAL: the issuer or the acquire denied the clearing request
+            - REFUND_CLEARED : both acquirer and issuer agreed on the clearing of the operation
+            - REFUND_FAILURE: a technical issue prevented the operation to be cleared
+            - REFUND_DENIAL: the issuer or the acquire denied the clearing request
+        example: CAPTURE_CLEARED
+      triggerEventReason:
+        type: string
+        description: Reason why this event has been triggered. Free text.
+      dateTime:
+        type: string
+        description: time of the change (ISO 8601)
+        format: datetime
+        example: '2033-12-31T04:54:00Z'
+      triggerEventCodedReason:
+        title: QualifiedCodedText.v1
+        description: To be used by application that has a requirement to send the code and the description of the code
+        type: object
+        x-examples: {}
+        properties:
+          code:
+            type: string
+            description: This will return the code setup by an organization
+          text:
+            type: string
+            description: Free Text
+            example: Free text to add more context and additional information
+    required:
+      - triggerEventName
+securityDefinitions:
+  1AAuth:
+    name: Authorization
+    type: apiKey
+    in: header
+basePath: /{attributed-sap}/SPWREQ/v1
+tags:
+  - name: OperationEvent
+    description: |
+      **POSTING AN EVENT REGARDING A SPECIFIC OPERATION**
+responses:
+  error-response-400:
+    description: |
+      **400 Bad Request error.** Problem reading or understanding request (Usually missing data or invalid requests). Please find below an exhaustive list of errors:
+
+      code   | - | title
+      ------:|:-:|:-
+        477  |   | INVALID FORMAT
+    schema:
+      $ref: '#/definitions/ErrorResponse'
+    examples:
+      application/vnd.amadeus+json:
+        errors:
+          - code: 477
+            title: INVALID FORMAT
