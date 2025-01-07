@@ -1,0 +1,1065 @@
+{
+	"info": {
+		"_postman_id": "d13b28bf-8eda-4489-b498-9a0600362b8d",
+		"name": "Webhook notification",
+		"description": "BE notifications are triggered by the Payment Service Provider (PSP) during authorization and refund processes. The endpoint URLs for these notifications are as follows:\n\n**Authorization Notification Endpoint:**\n\n- URL: `https://{your-organization-name-in-outpayce}.payments.feeds.amadeus.com/v1/payment/3rd-party-gateway/{your-organization-name-in-outpayce}/authorizations/{operation-id}/events`\n    \n\n**Refund Notification Endpoint:**\n\n- URL: `https://{your-organization-name-in-outpayce}.payment.feeds.amadeus.com/v1/payment/3rd-party-gateway/{your-organization-name-in-outpayce}/refunds/{operation-id}/events`\n    \n\nThese endpoints are responsible for notifying the system about events related to authorization and refund processes of BE.\n\n**Note: We acknowledge the receipt of BE notification by responding back to PSP with HTTP status code of 200 - OK**",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "27781027",
+		"_collection_link": "https://galactic-star-541813.postman.co/workspace/VNPay-Sandbox~3ab04a4c-51f3-4c63-9d60-f0ae8491799a/collection/27781027-d13b28bf-8eda-4489-b498-9a0600362b8d?action=share&source=collection_link&creator=27781027"
+	},
+	"item": [
+		{
+			"name": "Authorization",
+			"item": [
+				{
+					"name": "Successful Authorization",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"/*\r",
+									"\r",
+									"1. BE notif ll be received post Authorisation / Refund perfomed\r",
+									"2. Url for the refund is https://{your-organization-name-in-outpayce}.payment.feeds.amadeus.com/v1/payment/3rd-party-gateway/{your-organization-name-in-outpayce}/authorizations/{operation-id}/events\r",
+									"3. your-organization-name-in-outpayce is PSP name in our side, for ex: SHOPPEEPAY\r",
+									"\r",
+									"\r",
+									"// Importing the moment.js library\r",
+									"var moment = require('moment');\r",
+									"\r",
+									"// Current timestamp in the desired format\r",
+									"var currentTimestamp = moment().utc().format(\"YYYY-MM-DDTHH:mm:ss[Z]\");\r",
+									"\r",
+									"// Updating the \"timestamp\" field in JSON request body\r",
+									"pm.collectionVariables.set(\"timestamp\", currentTimestamp);\r",
+									"\r",
+									"*/"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Updated example response JSON\r",
+									"var responseJson = {\r",
+									"    \"data\": {\r",
+									"        \"status\": \"OK\"\r",
+									"    }\r",
+									"};\r",
+									"\r",
+									"// Test for status code\r",
+									"pm.test(\"Status code is 200 OK\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"// Validate the response structure\r",
+									"pm.test(\"Response has correct structure\", function() {\r",
+									"    pm.expect(responseJson).to.have.property(\"data\");\r",
+									"    pm.expect(responseJson.data).to.have.property(\"status\");\r",
+									"});\r",
+									"\r",
+									"// Test the data type of the properties\r",
+									"pm.test(\"Data types should be as expected\", function () {\r",
+									"    pm.expect(responseJson).to.be.an(\"object\");\r",
+									"    pm.expect(responseJson.data).to.be.an(\"object\");\r",
+									"    pm.expect(responseJson.data.status).to.be.a(\"string\");\r",
+									"});\r",
+									"\r",
+									"// Validate specific property values\r",
+									"pm.test(\"Response property values are correct\", function() {\r",
+									"    pm.expect(responseJson.data.status).to.eql(\"OK\");\r",
+									"});\r",
+									"\r",
+									"// Define the expected URL with the replacement\r",
+									"var expectedUrl = \"https://1e55acef-f925-4266-b3b8-58855081e2d9.mock.pstmn.io/VNPay.payments.feeds.amadeus.com/v1/payment/3rd-party-gateway/VNPay/authorizations/a29874-f68c189c-c617-5876-b1ae-6d6aec9c812a/events\";\r",
+									"\r",
+									"// Test for the expected URL\r",
+									"pm.test(\"Request URL is as expected\", function () {\r",
+									"    pm.expect(pm.request.url.toString()).to.equal(expectedUrl);\r",
+									"});\r",
+									"\r",
+									"// Test for the Content-Type header in the response\r",
+									"pm.test(\"Response Content-Type includes application/vnd.amadeus+json\", function () {\r",
+									"    const contentType = pm.response.headers.get(\"Content-Type\");\r",
+									"    pm.expect(contentType).to.include(\"application/vnd.amadeus+json\");\r",
+									"});\r",
+									"\r",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "{{content_type}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"data\": {\r\n        \"triggerEventName\": \"{{triggerEventName_Auth}}\",\r\n        \"dateTime\": \"{{dateTime_Auth}}\"\r\n    }\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/VNPay.payments.feeds.amadeus.com/v1/payment/3rd-party-gateway/VNPay/authorizations/a29874-f68c189c-c617-5876-b1ae-6d6aec9c812a/events",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"VNPay.payments.feeds.amadeus.com",
+								"v1",
+								"payment",
+								"3rd-party-gateway",
+								"VNPay",
+								"authorizations",
+								"a29874-f68c189c-c617-5876-b1ae-6d6aec9c812a",
+								"events"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Successful Authorization",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"value": "{{content_type}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"data\": {\r\n        \"triggerEventName\": \"{{triggerEventName_Auth}}\",\r\n        \"dateTime\": \"{{dateTime_Auth}}\"\r\n    }\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/VNPay.payments.feeds.amadeus.com/v1/payment/3rd-party-gateway/VNPay/authorizations/a29874-f68c189c-c617-5876-b1ae-6d6aec9c812a/events",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"VNPay.payments.feeds.amadeus.com",
+										"v1",
+										"payment",
+										"3rd-party-gateway",
+										"VNPay",
+										"authorizations",
+										"a29874-f68c189c-c617-5876-b1ae-6d6aec9c812a",
+										"events"
+									]
+								}
+							},
+							"status": "Accepted",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "{{content_type}}",
+									"name": "Content-Type",
+									"description": "",
+									"type": "text"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"data\": {\n        \"status\": \"{{ok_status}}\"\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Authorization pending",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"/*\r",
+									"\r",
+									"1. BE notif ll be received post Authorisation / Refund perfomed\r",
+									"2. Url for the refund is https://{your-organization-name-in-outpayce}.payment.feeds.amadeus.com/v1/payment/3rd-party-gateway/{your-organization-name-in-outpayce}/authorizations/{operation-id}/events\r",
+									"3. your-organization-name-in-outpayce is PSP name in our side, for ex: SHOPPEEPAY\r",
+									"\r",
+									"\r",
+									"// Importing the moment.js library\r",
+									"var moment = require('moment');\r",
+									"\r",
+									"// Current timestamp in the desired format\r",
+									"var currentTimestamp = moment().utc().format(\"YYYY-MM-DDTHH:mm:ss[Z]\");\r",
+									"\r",
+									"// Updating the \"timestamp\" field in JSON request body\r",
+									"pm.collectionVariables.set(\"timestamp\", currentTimestamp);\r",
+									"\r",
+									"*/"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Updated example response JSON\r",
+									"var responseJson = {\r",
+									"    \"data\": {\r",
+									"        \"status\": \"OK\"\r",
+									"    }\r",
+									"};\r",
+									"\r",
+									"// Test for status code\r",
+									"pm.test(\"Status code is 200 OK\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"// Validate the response structure\r",
+									"pm.test(\"Response has correct structure\", function() {\r",
+									"    pm.expect(responseJson).to.have.property(\"data\");\r",
+									"    pm.expect(responseJson.data).to.have.property(\"status\");\r",
+									"});\r",
+									"\r",
+									"// Test the data type of the properties\r",
+									"pm.test(\"Data types should be as expected\", function () {\r",
+									"    pm.expect(responseJson).to.be.an(\"object\");\r",
+									"    pm.expect(responseJson.data).to.be.an(\"object\");\r",
+									"    pm.expect(responseJson.data.status).to.be.a(\"string\");\r",
+									"});\r",
+									"\r",
+									"// Validate specific property values\r",
+									"pm.test(\"Response property values are correct\", function() {\r",
+									"    pm.expect(responseJson.data.status).to.eql(\"OK\");\r",
+									"});\r",
+									"\r",
+									"// Define the expected URL with the replacement\r",
+									"var expectedUrl = \"https://1e55acef-f925-4266-b3b8-58855081e2d9.mock.pstmn.io/VNPay.payments.feeds.amadeus.com/v1/payment/3rd-party-gateway/VNPay/authorizations/a29874-f68c189c-c617-5876-b1ae-6d6aec9c812a/events\";\r",
+									"\r",
+									"// Test for the expected URL\r",
+									"pm.test(\"Request URL is as expected\", function () {\r",
+									"    pm.expect(pm.request.url.toString()).to.equal(expectedUrl);\r",
+									"});\r",
+									"\r",
+									"// Test for the Content-Type header in the response\r",
+									"pm.test(\"Response Content-Type includes application/vnd.amadeus+json\", function () {\r",
+									"    const contentType = pm.response.headers.get(\"Content-Type\");\r",
+									"    pm.expect(contentType).to.include(\"application/vnd.amadeus+json\");\r",
+									"});\r",
+									"\r",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "{{content_type}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"data\": {\r\n        \"triggerEventName\": \"{{triggerEventName_AuthPend}}\",\r\n        \"dateTime\": \"{{dateTime_Auth}}\"\r\n    }\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/VNPay.payments.feeds.amadeus.com/v1/payment/3rd-party-gateway/VNPay/authorizations/a29874-f68c189c-c617-5876-b1ae-6d6aec9c812a/events",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"VNPay.payments.feeds.amadeus.com",
+								"v1",
+								"payment",
+								"3rd-party-gateway",
+								"VNPay",
+								"authorizations",
+								"a29874-f68c189c-c617-5876-b1ae-6d6aec9c812a",
+								"events"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Authorization pending",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"value": "{{content_type}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"data\": {\r\n        \"triggerEventName\": \"{{triggerEventName_AuthPend}}\",\r\n        \"dateTime\": \"{{dateTime_Auth}}\"\r\n    }\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/VNPay.payments.feeds.amadeus.com/v1/payment/3rd-party-gateway/VNPay/authorizations/a29874-f68c189c-c617-5876-b1ae-6d6aec9c812a/events",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"VNPay.payments.feeds.amadeus.com",
+										"v1",
+										"payment",
+										"3rd-party-gateway",
+										"VNPay",
+										"authorizations",
+										"a29874-f68c189c-c617-5876-b1ae-6d6aec9c812a",
+										"events"
+									]
+								}
+							},
+							"status": "Accepted",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "{{content_type}}",
+									"name": "Content-Type",
+									"description": "",
+									"type": "text"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"data\": {\n        \"status\": \"{{ok_status}}\"\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Authorization denial",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"/*\r",
+									"\r",
+									"1. BE notif ll be received post Authorisation / Refund perfomed\r",
+									"2. Url for the refund is https://{your-organization-name-in-outpayce}.payment.feeds.amadeus.com/v1/payment/3rd-party-gateway/{your-organization-name-in-outpayce}/authorizations/{operation-id}/events\r",
+									"3. your-organization-name-in-outpayce is PSP name in our side, for ex: SHOPPEEPAY\r",
+									"\r",
+									"\r",
+									"// Importing the moment.js library\r",
+									"var moment = require('moment');\r",
+									"\r",
+									"// Current timestamp in the desired format\r",
+									"var currentTimestamp = moment().utc().format(\"YYYY-MM-DDTHH:mm:ss[Z]\");\r",
+									"\r",
+									"// Updating the \"timestamp\" field in JSON request body\r",
+									"pm.collectionVariables.set(\"timestamp\", currentTimestamp);\r",
+									"\r",
+									"*/"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Updated example response JSON\r",
+									"var responseJson = {\r",
+									"    \"data\": {\r",
+									"        \"status\": \"OK\"\r",
+									"    }\r",
+									"};\r",
+									"\r",
+									"// Test for status code\r",
+									"pm.test(\"Status code is 200 OK\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"// Validate the response structure\r",
+									"pm.test(\"Response has correct structure\", function() {\r",
+									"    pm.expect(responseJson).to.have.property(\"data\");\r",
+									"    pm.expect(responseJson.data).to.have.property(\"status\");\r",
+									"});\r",
+									"\r",
+									"// Test the data type of the properties\r",
+									"pm.test(\"Data types should be as expected\", function () {\r",
+									"    pm.expect(responseJson).to.be.an(\"object\");\r",
+									"    pm.expect(responseJson.data).to.be.an(\"object\");\r",
+									"    pm.expect(responseJson.data.status).to.be.a(\"string\");\r",
+									"});\r",
+									"\r",
+									"// Validate specific property values\r",
+									"pm.test(\"Response property values are correct\", function() {\r",
+									"    pm.expect(responseJson.data.status).to.eql(\"OK\");\r",
+									"});\r",
+									"\r",
+									"// Define the expected URL with the replacement\r",
+									"var expectedUrl = \"https://1e55acef-f925-4266-b3b8-58855081e2d9.mock.pstmn.io/VNPay.payments.feeds.amadeus.com/v1/payment/3rd-party-gateway/VNPay/authorizations/a29874-f68c189c-c617-5876-b1ae-6d6aec9c812a/events\";\r",
+									"\r",
+									"// Test for the expected URL\r",
+									"pm.test(\"Request URL is as expected\", function () {\r",
+									"    pm.expect(pm.request.url.toString()).to.equal(expectedUrl);\r",
+									"});\r",
+									"\r",
+									"// Test for the Content-Type header in the response\r",
+									"pm.test(\"Response Content-Type includes application/vnd.amadeus+json\", function () {\r",
+									"    const contentType = pm.response.headers.get(\"Content-Type\");\r",
+									"    pm.expect(contentType).to.include(\"application/vnd.amadeus+json\");\r",
+									"});\r",
+									"\r",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "{{content_type}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"data\": {\r\n        \"triggerEventName\": \"{{triggerEventName_AuthDenial}}\",\r\n        \"triggerEventReason\": \"{{triggerEventReason_Auth}}\",\r\n        \"triggerEventCodedReason\": {\r\n            \"code\": \"{{psp_code}}\",\r\n            \"text\": \"{{psp_text}}\"\r\n        },\r\n        \"dateTime\": \"{{dateTime_Auth}}\"\r\n    }\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/VNPay.payments.feeds.amadeus.com/v1/payment/3rd-party-gateway/SHOPPEEPAY/authorizations/a29874-f68c189c-c617-5876-b1ae-6d6aec9c812a/events",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"VNPay.payments.feeds.amadeus.com",
+								"v1",
+								"payment",
+								"3rd-party-gateway",
+								"SHOPPEEPAY",
+								"authorizations",
+								"a29874-f68c189c-c617-5876-b1ae-6d6aec9c812a",
+								"events"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Authorization denial",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"value": "{{content_type}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"data\": {\r\n        \"triggerEventName\": \"{{triggerEventName_AuthDenial}}\",\r\n        \"triggerEventReason\": \"{{triggerEventReason_Auth}}\",\r\n        \"triggerEventCodedReason\": {\r\n            \"code\": \"{{psp_code}}\",\r\n            \"text\": \"{{psp_text}}\"\r\n        },\r\n        \"dateTime\": \"{{dateTime_Auth}}\"\r\n    }\r\n}\r\n",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/VNPay.payments.feeds.amadeus.com/v1/payment/3rd-party-gateway/SHOPPEEPAY/authorizations/a29874-f68c189c-c617-5876-b1ae-6d6aec9c812a/events",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"VNPay.payments.feeds.amadeus.com",
+										"v1",
+										"payment",
+										"3rd-party-gateway",
+										"SHOPPEEPAY",
+										"authorizations",
+										"a29874-f68c189c-c617-5876-b1ae-6d6aec9c812a",
+										"events"
+									]
+								}
+							},
+							"status": "Accepted",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "{{content_type}}",
+									"name": "Content-Type",
+									"description": "",
+									"type": "text"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"data\": {\n        \"status\": \"{{ok_status}}\"\n    }\n}"
+						}
+					]
+				}
+			],
+			"description": "When the Payment Service Provider (PSP) sends a webhook notification for authorization and refund, Amadeus acknowledges the received notification for both authorization and refund by responding with the status 'Acknowledged'.  \n  \nFor Synchronous Payments, AUTHORIZATION_PENDING is not expected, and in case AUTHORIZATION_PENDING is received, the transaction is marked as denied."
+		},
+		{
+			"name": "Refund",
+			"item": [
+				{
+					"name": "Refund success",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"/*\r",
+									"\r",
+									"1. BE notif ll be received post Authorisation / Refund perfomed\r",
+									"2. Url for the refund is https://{your-organization-name-in-outpayce}.payment.feeds.amadeus.com/v1/payment/3rd-party-gateway/{your-organization-name-in-outpayce}/refunds/{operation-id}/events\r",
+									"3. your-organization-name-in-outpayce is PSP name in our side, for ex: SHOPPEEPAY\r",
+									"\r",
+									"\r",
+									"\r",
+									"// Importing the moment.js library\r",
+									"var moment = require('moment');\r",
+									"\r",
+									"// Current timestamp in the desired format\r",
+									"var currentTimestamp = moment().utc().format(\"YYYY-MM-DDTHH:mm:ss[Z]\");\r",
+									"\r",
+									"// Updating the \"timestamp\" field in JSON request body\r",
+									"pm.collectionVariables.set(\"timestamp\", currentTimestamp);\r",
+									"\r",
+									"*/"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Updated example response JSON\r",
+									"var responseJson = {\r",
+									"    \"data\": {\r",
+									"        \"status\": \"OK\"\r",
+									"    }\r",
+									"};\r",
+									"\r",
+									"// Test for status code\r",
+									"pm.test(\"Status code is 200 OK\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"// Validate the response structure\r",
+									"pm.test(\"Response has correct structure\", function() {\r",
+									"    pm.expect(responseJson).to.have.property(\"data\");\r",
+									"    pm.expect(responseJson.data).to.have.property(\"status\");\r",
+									"});\r",
+									"\r",
+									"// Test the data type of the properties\r",
+									"pm.test(\"Data types should be as expected\", function () {\r",
+									"    pm.expect(responseJson).to.be.an(\"object\");\r",
+									"    pm.expect(responseJson.data).to.be.an(\"object\");\r",
+									"    pm.expect(responseJson.data.status).to.be.a(\"string\");\r",
+									"});\r",
+									"\r",
+									"// Validate specific property values\r",
+									"pm.test(\"Response property values are correct\", function() {\r",
+									"    pm.expect(responseJson.data.status).to.eql(\"OK\");\r",
+									"});\r",
+									"\r",
+									"// Define the expected URL with the replacement\r",
+									"var expectedUrl = \"https://1e55acef-f925-4266-b3b8-58855081e2d9.mock.pstmn.io/VNPay.payments.feeds.amadeus.com/v1/payment/3rd-party-gateway/VNPay/refunds/a29874-f68c189c-c617-5876-b1ae-6d6aec9c812a/events\";\r",
+									"\r",
+									"// Test for the expected URL\r",
+									"pm.test(\"Request URL is as expected\", function () {\r",
+									"    pm.expect(pm.request.url.toString()).to.equal(expectedUrl);\r",
+									"});\r",
+									"\r",
+									"// Test for the Content-Type header in the response\r",
+									"pm.test(\"Response Content-Type includes application/vnd.amadeus+json\", function () {\r",
+									"    const contentType = pm.response.headers.get(\"Content-Type\");\r",
+									"    pm.expect(contentType).to.include(\"application/vnd.amadeus+json\");\r",
+									"});\r",
+									"\r",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "{{content_type}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"data\": {\r\n        \"triggerEventName\": \"{{triggerEventName_Refundcleared}}\",\r\n        \"triggerEventReason\": \"{{triggerEventReason_Refund}}\",\r\n        \"dateTime\": \"{{dateTime_Refund}}\"\r\n    }\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/VNPay.payments.feeds.amadeus.com/v1/payment/3rd-party-gateway/VNPay/refunds/a29874-f68c189c-c617-5876-b1ae-6d6aec9c812a/events",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"VNPay.payments.feeds.amadeus.com",
+								"v1",
+								"payment",
+								"3rd-party-gateway",
+								"VNPay",
+								"refunds",
+								"a29874-f68c189c-c617-5876-b1ae-6d6aec9c812a",
+								"events"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Refund success",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"value": "{{content_type}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"data\": {\r\n        \"triggerEventName\": \"{{triggerEventName_Refundcleared}}\",\r\n        \"triggerEventReason\": \"{{triggerEventReason_Refund}}\",\r\n        \"dateTime\": \"{{dateTime_Refund}}\"\r\n    }\r\n}\r\n",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/VNPay.payments.feeds.amadeus.com/v1/payment/3rd-party-gateway/VNPay/refunds/a29874-f68c189c-c617-5876-b1ae-6d6aec9c812a/events",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"VNPay.payments.feeds.amadeus.com",
+										"v1",
+										"payment",
+										"3rd-party-gateway",
+										"VNPay",
+										"refunds",
+										"a29874-f68c189c-c617-5876-b1ae-6d6aec9c812a",
+										"events"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "{{content_type}}",
+									"name": "Content-Type",
+									"description": "",
+									"type": "text"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"data\": {\n        \"status\": \"{{ok_status}}\"\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Refund failure",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"/*\r",
+									"\r",
+									"1. BE notif ll be received post Authorisation / Refund perfomed\r",
+									"2. Url for the refund is https://{your-organization-name-in-outpayce}.payment.feeds.amadeus.com/v1/payment/3rd-party-gateway/{your-organization-name-in-outpayce}/refunds/{operation-id}/events\r",
+									"3. your-organization-name-in-outpayce is PSP name in our side, for ex: SHOPPEEPAY\r",
+									"\r",
+									"\r",
+									"\r",
+									"// Importing the moment.js library\r",
+									"var moment = require('moment');\r",
+									"\r",
+									"// Current timestamp in the desired format\r",
+									"var currentTimestamp = moment().utc().format(\"YYYY-MM-DDTHH:mm:ss[Z]\");\r",
+									"\r",
+									"// Updating the \"timestamp\" field in JSON request body\r",
+									"pm.collectionVariables.set(\"timestamp\", currentTimestamp);\r",
+									"\r",
+									"*/"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Updated example response JSON\r",
+									"var responseJson = {\r",
+									"    \"data\": {\r",
+									"        \"status\": \"OK\"\r",
+									"    }\r",
+									"};\r",
+									"\r",
+									"// Test for status code\r",
+									"pm.test(\"Status code is 200 OK\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"// Validate the response structure\r",
+									"pm.test(\"Response has correct structure\", function() {\r",
+									"    pm.expect(responseJson).to.have.property(\"data\");\r",
+									"    pm.expect(responseJson.data).to.have.property(\"status\");\r",
+									"});\r",
+									"\r",
+									"// Test the data type of the properties\r",
+									"pm.test(\"Data types should be as expected\", function () {\r",
+									"    pm.expect(responseJson).to.be.an(\"object\");\r",
+									"    pm.expect(responseJson.data).to.be.an(\"object\");\r",
+									"    pm.expect(responseJson.data.status).to.be.a(\"string\");\r",
+									"});\r",
+									"\r",
+									"// Validate specific property values\r",
+									"pm.test(\"Response property values are correct\", function() {\r",
+									"    pm.expect(responseJson.data.status).to.eql(\"OK\");\r",
+									"});\r",
+									"\r",
+									"// Define the expected URL with the replacement\r",
+									"var expectedUrl = \"https://1e55acef-f925-4266-b3b8-58855081e2d9.mock.pstmn.io/VNPay.payments.feeds.amadeus.com/v1/payment/3rd-party-gateway/VNPay/refunds/a29874-f68c189c-c617-5876-b1ae-6d6aec9c812a/events\";\r",
+									"\r",
+									"// Test for the expected URL\r",
+									"pm.test(\"Request URL is as expected\", function () {\r",
+									"    pm.expect(pm.request.url.toString()).to.equal(expectedUrl);\r",
+									"});\r",
+									"\r",
+									"// Test for the Content-Type header in the response\r",
+									"pm.test(\"Response Content-Type includes application/vnd.amadeus+json\", function () {\r",
+									"    const contentType = pm.response.headers.get(\"Content-Type\");\r",
+									"    pm.expect(contentType).to.include(\"application/vnd.amadeus+json\");\r",
+									"});\r",
+									"\r",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "{{content_type}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"data\": {\r\n        \"triggerEventName\": \"{{triggerEventName_Refundfail}}\",\r\n        \"triggerEventReason\": \"{{triggerEventReason_Refund}}\",\r\n        \"dateTime\": \"{{dateTime_Refund}}\"\r\n    }\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/VNPay.payments.feeds.amadeus.com/v1/payment/3rd-party-gateway/VNPay/refunds/a29874-f68c189c-c617-5876-b1ae-6d6aec9c812a/events",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"VNPay.payments.feeds.amadeus.com",
+								"v1",
+								"payment",
+								"3rd-party-gateway",
+								"VNPay",
+								"refunds",
+								"a29874-f68c189c-c617-5876-b1ae-6d6aec9c812a",
+								"events"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Refund failure",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"value": "{{content_type}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"data\": {\r\n        \"triggerEventName\": \"{{triggerEventName_Refundfail}}\",\r\n        \"triggerEventReason\": \"{{triggerEventReason_Refund}}\",\r\n        \"dateTime\": \"{{dateTime_Refund}}\"\r\n    }\r\n}\r\n",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/VNPay.payments.feeds.amadeus.com/v1/payment/3rd-party-gateway/VNPay/refunds/a29874-f68c189c-c617-5876-b1ae-6d6aec9c812a/events",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"VNPay.payments.feeds.amadeus.com",
+										"v1",
+										"payment",
+										"3rd-party-gateway",
+										"VNPay",
+										"refunds",
+										"a29874-f68c189c-c617-5876-b1ae-6d6aec9c812a",
+										"events"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "{{content_type}}",
+									"name": "Content-Type",
+									"description": "",
+									"type": "text"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"data\": {\n        \"status\": \"{{ok_status}}\"\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Refund denial",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"/*\r",
+									"\r",
+									"1. BE notif ll be received post Authorisation / Refund perfomed\r",
+									"2. Url for the refund is https://{your-organization-name-in-outpayce}.payment.feeds.amadeus.com/v1/payment/3rd-party-gateway/{your-organization-name-in-outpayce}/refunds/{operation-id}/events\r",
+									"3. your-organization-name-in-outpayce is PSP name in our side, for ex: SHOPPEEPAY\r",
+									"\r",
+									"\r",
+									"\r",
+									"// Importing the moment.js library\r",
+									"var moment = require('moment');\r",
+									"\r",
+									"// Current timestamp in the desired format\r",
+									"var currentTimestamp = moment().utc().format(\"YYYY-MM-DDTHH:mm:ss[Z]\");\r",
+									"\r",
+									"// Updating the \"timestamp\" field in JSON request body\r",
+									"pm.collectionVariables.set(\"timestamp\", currentTimestamp);\r",
+									"\r",
+									"*/"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Updated example response JSON\r",
+									"var responseJson = {\r",
+									"    \"data\": {\r",
+									"        \"status\": \"OK\"\r",
+									"    }\r",
+									"};\r",
+									"\r",
+									"// Test for status code\r",
+									"pm.test(\"Status code is 200 OK\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"// Validate the response structure\r",
+									"pm.test(\"Response has correct structure\", function() {\r",
+									"    pm.expect(responseJson).to.have.property(\"data\");\r",
+									"    pm.expect(responseJson.data).to.have.property(\"status\");\r",
+									"});\r",
+									"\r",
+									"// Test the data type of the properties\r",
+									"pm.test(\"Data types should be as expected\", function () {\r",
+									"    pm.expect(responseJson).to.be.an(\"object\");\r",
+									"    pm.expect(responseJson.data).to.be.an(\"object\");\r",
+									"    pm.expect(responseJson.data.status).to.be.a(\"string\");\r",
+									"});\r",
+									"\r",
+									"// Validate specific property values\r",
+									"pm.test(\"Response property values are correct\", function() {\r",
+									"    pm.expect(responseJson.data.status).to.eql(\"OK\");\r",
+									"});\r",
+									"\r",
+									"// Define the expected URL with the replacement\r",
+									"var expectedUrl = \"https://1e55acef-f925-4266-b3b8-58855081e2d9.mock.pstmn.io/VNPay.payments.feeds.amadeus.com/v1/payment/3rd-party-gateway/VNPay/refunds/a29874-f68c189c-c617-5876-b1ae-6d6aec9c812a/events\";\r",
+									"\r",
+									"// Test for the expected URL\r",
+									"pm.test(\"Request URL is as expected\", function () {\r",
+									"    pm.expect(pm.request.url.toString()).to.equal(expectedUrl);\r",
+									"});\r",
+									"\r",
+									"// Test for the Content-Type header in the response\r",
+									"pm.test(\"Response Content-Type includes application/vnd.amadeus+json\", function () {\r",
+									"    const contentType = pm.response.headers.get(\"Content-Type\");\r",
+									"    pm.expect(contentType).to.include(\"application/vnd.amadeus+json\");\r",
+									"});\r",
+									"\r",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "{{content_type}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"data\": {\r\n        \"triggerEventName\": \"{{triggerEventName_Refunddenial}}\",\r\n        \"triggerEventReason\": \"{{triggerEventReason_Refund}}\",\r\n        \"dateTime\": \"{{dateTime_Refund}}\"\r\n    }\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/VNPay.payments.feeds.amadeus.com/v1/payment/3rd-party-gateway/VNPay/refunds/a29874-f68c189c-c617-5876-b1ae-6d6aec9c812a/events",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"VNPay.payments.feeds.amadeus.com",
+								"v1",
+								"payment",
+								"3rd-party-gateway",
+								"VNPay",
+								"refunds",
+								"a29874-f68c189c-c617-5876-b1ae-6d6aec9c812a",
+								"events"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Refund denial",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"value": "{{content_type}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"data\": {\r\n        \"triggerEventName\": \"{{triggerEventName_Refunddenial}}\",\r\n        \"triggerEventReason\": \"{{triggerEventReason_Refund}}\",\r\n        \"dateTime\": \"{{dateTime_Refund}}\"\r\n    }\r\n}\r\n",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/VNPay.payments.feeds.amadeus.com/v1/payment/3rd-party-gateway/VNPay/refunds/a29874-f68c189c-c617-5876-b1ae-6d6aec9c812a/events",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"VNPay.payments.feeds.amadeus.com",
+										"v1",
+										"payment",
+										"3rd-party-gateway",
+										"VNPay",
+										"refunds",
+										"a29874-f68c189c-c617-5876-b1ae-6d6aec9c812a",
+										"events"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "{{content_type}}",
+									"name": "Content-Type",
+									"description": "",
+									"type": "text"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"data\": {\n        \"status\": \"{{ok_status}}\"\n    }\n}"
+						}
+					]
+				}
+			],
+			"description": "When the Payment Service Provider (PSP) sends a webhook notification for authorization and refund, Amadeus acknowledges the received notification for both authorization and refund by responding with the status 'Acknowledged'.  \n  \nPossible status from PSP\n\n- REFUND_CLEARED : both acquirer and issuer agreed on the clearing of the operation\n    \n- REFUND_FAILURE: a technical issue prevented the operation to be cleared\n- REFUND_DENIAL: the issuer or the acquire denied the clearing request"
+		}
+	]
+}

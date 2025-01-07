@@ -1,7 +1,7 @@
 *Last Updated: 10th of November, 2023*
 
 # Terms of Use
-Welcome to the OutpayceLab GitHub Organization. By accessing this restricted GitHub repository website `https://www.github.com/outpaycelab/outpayce-provider-demo-api` ("**Site**") is operated by Outpayce, S.A.U. ("**Outpayce**"), a company registered with the Commercial Registry of Madrid, General Volume 25562 of Section 8 of the Companies Book, Folio 107, Sheet no M-85424893, Tax Identification Number (NIF): ES-A85424893 with principal offices at C/ Salvador de Madariaga 1, 28027 Madrid, Spain. Under these Terms of Use, we may refer to Outpayce as "we", "our", or "us".
+Welcome to the OutpayceLab GitHub Organization. By accessing this restricted GitHub repository website `https://www.github.com/outpaycelab/outpayce-provider-ob-apm-api` ("**Site**") is operated by Outpayce, S.A.U. ("**Outpayce**"), a company registered with the Commercial Registry of Madrid, General Volume 25562 of Section 8 of the Companies Book, Folio 107, Sheet no M-85424893, Tax Identification Number (NIF): ES-A85424893 with principal offices at C/ Salvador de Madariaga 1, 28027 Madrid, Spain. Under these Terms of Use, we may refer to Outpayce as "we", "our", or "us".
 
 These terms of use govern your access to and use of this Site and any section of the Site (including without limitation an OutpayceLab GitHub Organization account). Other services or materials operated or provided by Outpayce or by third parties may be subject to other terms of use, which will be indicated to you prior to use.
 
@@ -19,9 +19,9 @@ If you do not agree to comply with these terms of use or any amendments to them 
 These terms of use refer to the [Privacy Statement](https://www.outpayce.com/en/legal/personal-information) and [Cookie Notice](https://www.outpayce.com/en/legal/cookie-notice) which also apply to your use of the Site in addition to [GitHub Privacy Statement](https://docs.github.com/en/site-policy/privacy-policies/github-privacy-statement) and [GitHub Terms Of Service](https://docs.github.com/en/site-policy/github-terms/github-terms-of-service).
 
 ## Registration and Acceptance
-Unless instructed otherwise by Us in writing, or unless you have instructed your contact in Outpayce to do so for you, in order to access the Site, you must create an account linked to a valid e-mail address. You agree to provide accurate and up to date registration information. You shall inform Outpayce immediately of any change to such registration information. You are solely responsible for the accuracy of the information you provide when creating your account, for the security of your password and for any use, activities or actions taken under your account. If you become aware of any unauthorised access to or use of your account, you shall notify Outpayce immediately.  If you provide access to your account or the Materials to third parties (whether natural or legal persons), you agree that you are responsible towards Outpayce for the actions or omissions of such third parties, without prejudice of any rights of ways of action available to Outpayce against such third parties. 
+Unless instructed otherwise by Us in writing, or unless you have instructed your contact in Outpayce to do so for you, in order to access the Site, you must create an account linked to a valid e-mail address. You agree to provide accurate and up to date registration information. You shall inform Outpayce immediately of any change to such registration information. You are solely responsible for the accuracy of the information you provide when creating your account, for the security of your password and for any use, activities or actions taken under your account. If you become aware of any unauthorised access to or use of your account, you shall notify Outpayce immediately.  If you provide access to your account or the Materials to third parties (whether natural or legal persons), you agree that you are responsible towards Outpayce for the actions or omissions of such third parties, without prejudice of any rights of ways of action available to Outpayce against such third parties.
 
-You shall take all precautions necessary to prevent unauthorized access to the Materials. 
+You shall take all precautions necessary to prevent unauthorized access to the Materials.
 
 If we assign you developer credentials (e.g. client IDs, passwords, token and keys) (the “API User Identity”) for the use of part of all of the Materials, you must use them in accordance with their intended use. You will not misrepresent or mask either your identity when using the Materials or otherwise. You will keep your API User Identity confidential and use your best efforts to prevent and discourage other third parties from using your API User Identity.
 
@@ -50,7 +50,7 @@ In consideration of Outpayce permitting you to use the Site you agree to comply 
 ## Restrictions on use
 Your permission to use this Site is conditional on your compliance with these terms of use and is subject to the following restrictions:
 - You must comply with all applicable local, national or international law or regulation when using the Site and must not use the Site for illegal or illegitimate purposes;
-- You must not use the Site in any way that may prejudice or damage Outpayce’ business. 
+- You must not use the Site in any way that may prejudice or damage Outpayce’ business.
 - You must not transmit any material that is defamatory, offensive or otherwise objectionable.
 - You must not use the Site in any way for your own commercial gain.
 - You must not reproduce, duplicate, copy or re-sell any part of the Site.
@@ -67,7 +67,7 @@ We may from time to time provide interactive services on our Site that allow you
 - Contains any third-party material or content for which you have not obtained all the necessary consents and licenses.
 - Is defamatory, unlawful, obscene, offensive, hateful, inflammatory, pornographic, in breach of any legal duty owed to a third party, such as a contractual duty or a duty of confidence or is threatening, abusive, invades another’s privacy, or causes annoyance, inconvenience or needless anxiety.
 - Constitutes or encourages conduct that would be considered a criminal office or give rise to civil liability or otherwise contrary to the law of or would infringe the rights of any party in any country in the world.
-- Is technically harmful (including without limitation, containing computer viruses). 
+- Is technically harmful (including without limitation, containing computer viruses).
 
 To the extent that you contribute any information to the Site you hereby grant Outpayce and its group companies a non-exclusive, perpetual, royalty-free, worldwide, transferable and sub licensable right to use, reproduce both electronically and otherwise, display, distribute, modify, adapt, publish and create derivative works from any and all such contributions including for the purposes of advertising and marketing.
 
@@ -95,8 +95,8 @@ By using the Site and hence accepting these Terms of Use you warrant and represe
 Your use of this Site is entirely at your own risk. While Outpayce will make reasonable efforts to ensure that the content of the Site is up to date and accurate, Outpayce makes no representations, warranties or guarantees, whether express or implied that the Site:
 - Is accurate, complete or up to date;
 - Will always be available;
-- Is secure, free from errors, faults, defects, viruses or malware. 
- 
+- Is secure, free from errors, faults, defects, viruses or malware.
+
 To the maximum extent permissible by law (and except in respect of death or personal injury arising out of the negligence of Outpayce or in respect of fraud or fraudulent misrepresentation) Outpayce does not accept liability (whether based on contract, tort, strict liability or otherwise) for:
 - Any inaccuracies, or omissions in the content of the Site, or
 - Any loss, damage, cost, expense of any kind incurred by you arising in connection with your access to, use of, or inability to use the Site or any content contained in them; and by using the Site you release Outpayce from all such liability.
@@ -124,7 +124,7 @@ Outpayce' data protection practices with respect to the Site are explained in th
 
 
 ## General
-If one or more of the provisions of these Terms of Use are void, determined to be invalid, unenforceable or illegal, such invalidity, illegality and unenforceability shall not affect any other provisions of these Terms of Use. 
+If one or more of the provisions of these Terms of Use are void, determined to be invalid, unenforceable or illegal, such invalidity, illegality and unenforceability shall not affect any other provisions of these Terms of Use.
 
 
 These Terms of Use are personal to you and you are not entitled to assign this Agreement to any third party without Outpayce prior written consent. The Terms of Use do not create any third-party beneficiary rights.

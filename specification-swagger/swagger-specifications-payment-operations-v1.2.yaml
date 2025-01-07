@@ -1,0 +1,2969 @@
+swagger: '2.0'
+x-stoplight:
+  id: flegwybny6utx
+info:
+  title: AMA4DEV-EACU-TEST-20240522-PaymentOperations-v1.2
+  description: |
+    **Preliminary Note:** This document aims at describing how to use the Amadeus JSON API for core Payment *Operation* management, dealing with payment transactions.
+    Amadeus APIs comply with Amadeus REST/JSON Rules & Guideline v1.3 and are based on *application/vnd.amadeus+json* [media type](https://www.iana.org/assignments/media-types/media-types.xhtml). For further details please refer to [developers.amadeus.com](https://developers.amadeus.com).
+
+    ## Resource: *Operations*
+    The main payment resource used here is the '*Operations*' resource. An *Operation* is either a payment operation implying or not a direct move of funds between a payer and a payee, or an operation related to a payment instrument (an instrument order or an instrument validation). An *Operation* is therefore an abstract resource that may be one of the following: *Authorization*, *Capture*,*Refund* and *Instrument Order*
+
+    ### Payment Operation ontology
+
+    #### *Authorization*
+    An *Authorization* is usually the first transaction performed during the acceptance stage of a payment, ie an agreement on some money to be exchanged, at once or later, between two parties, the individual or corporate *payer* and the *payee*. When successful, it usually results in the amount at stake being blocked for a limited period of time on the payer's account.
+
+    #### *Capture* & *Refund*
+    *Capture* and *Refund* are operations performed during the clearing stage of a payment, ie when service is sold and money has to be transferred, and vice versa. Depending on the payment, *Capture* could be immediate at *Authorization* time when successful. This is what is called 1-step or single-message payment. In that case, the *Authorization* prevails and there is no use of any separate *Capture*. Otherwise, money actually starts to move only when the act of *Capture* is confirmed, which is called 2-step or dual-message payment choreography. When reimbursement is due, a *Refund* will be issued from the *payee* to the *payer*.
+
+    #### *Instrument Order*
+    The main payment resource used here is the 'Instrument Order'. This is an operation to request a payment instrument to your system which will be used to pay a *Merchant* on behalf of one of its *clients*. During this operation, the *client* will be redirected to one your web pages in order to contract a 'Buy Now Pay Later' payment solution. The way the *client* pays this solution is out of scope of this API.
+
+    ## Quickstart Guide
+    ### 1. Merchant account setup
+    Amadeus Payment Gateway sends payment operations on behalf of merchants. A merchant is identified in your system by a *MERCHANT_ACCOUNT*. It may even be attributed a MERCHANT_LOGIN with an associated MERCHANT_PASSWORD.
+
+    ### 2. Authorization
+    At the end of a fruitful shopping session, the client of the merchant could choose to pay by payment card or an alternative payment method.
+
+    #### 2.1. Multi-steps Authorization
+    ##### 2.1.1 Alternative Methods Of Payment with redirection
+    When the client agrees to pay with an alternative method of payment like _Paypal_ for an amount of _123.45€_, Amadeus Payment Gateway captures the selected alternative payment method, collects the required information and sends a request to your system such as:
+    ```
+    PUT https://{your-host-name}/outpayce/v1/authorizations/{authorizationId} HTTP/1.1
+    Content-Type: application/vnd.amadeus+json
+    ...
+    {
+       "data":{
+          "id":"{authorizationId}",
+          "method":"AMOP",
+          "amount": {
+              "value": "123.45",
+              "currencyCode": "EUR"
+          },
+         "instrument": {
+                "paymentSystem": "PAYPAL"
+            },
+          "paymentMerchantReference": "MERCHANT_REFERENCE",
+          "authorizationType": "AUTHOR_AND_CAPTURE",
+          "timestamp":"2032-11-28-T13:37:00Z",
+          "pointOfInteraction":{
+             "location":{
+                "address":{
+                   "countryCode":"IN"
+                }
+              }  
+             },
+          "operationContext":{
+             "merchantAccount":{
+                "name":"MERCHANT_ACCOUNT",
+                "login":"MERCHANT_LOGIN",
+                "password":{
+                   "payload":"MERCHANT_PASSWORD"
+                }
+             },
+            "links": [
+              {
+                "rel":"default-callback",
+                "href":"https://mysite.amadeus.com/landingpage/uniquereference123/confirm",
+               },
+              {
+                 "rel": "webhook",
+                  "href": "https://{your-organization-name-in-outpayce}.payment.feeds.outpayce.com/v1/payment/3rd-party-gateway/{your-organization-name-in-outpayce}/authorizations/{authorizationId}/events"
+               }
+            ],
+            "device": {
+              "activeWebBrowser": {
+                  "ietfLanguageTag": "fr-CA"                    
+              }
+            }
+          }
+       }
+     }
+
+    ```
+    Your application parses the request and after processing it, returns a response such as:
+      ```
+    HTTP/1.1 202 Accepted
+    Location: https://{your-host-name}/outpayce/v1/authorizations/{authorizationId}
+    Content-Type: application/vnd.amadeus+json
+    {
+    "data": {
+        "externalId": "EXTERNAL_ID",
+        "status": "ACCEPTED", 
+        "timestamp": "2032-11-28T14:59:55Z",
+        "targetPayloads": [
+          {
+            "href": "REDIRECTION_URL",
+            "method": "POST",
+             "formPayload": [
+              {
+                "name": "amount",
+                "value": "123.45"
+              },
+              {
+                "name": "currencyCode",
+                "value": "EUR"
+              }
+            ]
+          }
+        ]
+      }
+     } 
+      ```
+
+    In this response example, _REDIRECTION_URL_ is the landing page to redirect the payer to in order to complete the payment.
+
+    *With regards to Alternative Payment transactions, this is the minimum amount of data Amadeus Payment Gateway expects to receive in the response. Without at least these fields, Amadeus Payment Gateway is not be able to enable the merchant to perform the redirection.*
+     
+    *After a successful redirection by the merchant, and completion of payment by the payer, Amadeus Payment Gateway expects you to redirect the payer back to the merchant along with additional parameters. Please refer to the "Provider API Frontend Notification.md" file provided in _assests_ folder.*
+        
+    ##### 2.1.2 Alternative Methods Of Payment - Resumption
+    In the event Amadeus Payment Gateway has not received the final status of the authorization via "Webhook" (for more details about this step, please refer to the Payment Operations Events swagger.) and if after reception of the "Frontend Notification" (for more details about this step, please refer to the Interface Control Document), is unable to understand it, Amadeus Payment Gateway contacts your system via an authorization resumption in order to get it. 
+
+    The request is then the following:
+    ```
+    POST https://your-host-name/outpayce/v1/authorizations/{authorizationId}/resumption
+    Content-Type: application/vnd.amadeus+json
+    ```
+
+    Your application parses the request and after processing it, returns a response such as:
+
+    ```
+    HTTP/1.1 201 Created
+    Content-Type: application/vnd.amadeus+json  
+    {
+        "data": {
+            "id": "{authorizationId}",
+            "externalId": "EXTERNAL_ID",
+            "status": "AUTHORIZED",
+            "timestamp": "2032-11-28T23:59:55Z",
+        }
+    }  
+    ```
+    Usually, after this successful operation, the order is confirmed and the checkout process ends here.
+     
+     *With regards to Alternative Payment methods, Outpayce can only support APMs that eligible for Authorization & capture at the same time, i.e. the previous authorization was not only "blocking" the payer's balance, but as well requesting the acquiring bank to _capture_ the payment corresponding to what was eventually sold, i.e. authorizationType was "AUTHORIZATION_AND_CAPTURE"*
+
+
+    ### 3. Refund
+    In case of some after-sales case ending up in the merchant reimbursing the payer, Amadeus Payment Gateway will send to your system a request such as:
+
+    ### 3.1 Refund - Alternative Payment methods
+    ```
+    PUT https://{your-host-name}/outpayce/v1/refunds/{refundId} HTTP/1.1
+    Content-Type: application/vnd.amadeus+json
+    ...
+
+
+    {
+      "data": {
+        "parentOperationId": "authorizationId",
+        "id": "refundId",
+        "amount": {
+          "value": "75.24",
+          "currencyCode": "EUR"
+        },
+        "timestamp": "2023-06-22T20:09:21Z",
+        "method": "AMOP",
+        "instrument": {
+          "paymentSystem": "PAYPAL"
+        },
+        "operationContext": {
+          "merchantAccount": {
+              "name": "MERCHANT_ACCOUNT",
+              "login": "MERCHANT_LOGIN",
+              "password": {
+                 "payload":"MERCHANT_PASSWORD"
+                } 
+            }, 
+          "links": [
+              {
+                  "rel": "webhook",
+                  "href": "https://{your-organization-name-in-outpayce}.payment.feeds.outpayce.com/v1/payment/3rd-party-gateway/{your-organization-name-in-outpayce}/refunds/{refundId}/events"
+              }
+          ]
+        }
+      }
+    }
+    ```
+
+    Your application parses the request and after processing it, returns a response such as:
+    ```
+    HTTP/1.1 201 Created
+    Location: https://{your-host-name}/outpayce/v1/refunds/{refundId}
+    Content-Type: application/vnd.amadeus+json
+
+      {
+      "data": {
+        "parentOperationId": "authorizationId",
+        "id": "refundId",
+        "method": "AMOP",
+        "status": "RECEIVED",
+        "timestamp": "2022-11-29-T11:22:00Z"
+      }
+    }
+    ```
+
+     *With regards to Alternative Payment methods, this is the minimum amount of data Outpayce expects to receive in the response. Without at least these fields, Outpayce will not be able to process the Refund response.*
+
+    ### 4. Instrument Order 
+    ### Instrument Order creation
+    At the end of a fruitful shopping session, the client of the merchant agrees to pay with BNPL payment method for an amount of *123.45USD*. Amadeus Payment Gateway sends a request to your system such as:
+
+    ```
+        PUT https://{your-host-name}/v1/instrument-orders/{id} HTTP/1.1
+        Content-Type: application/vnd.amadeus+json
+        ...
+        {
+        "data": {
+            "id": "instrumentorderId",
+            "method": "VIRTUALCARD",
+            "paymentMerchantReference": "VEPQQBAPUL301474106055",
+            "purposeOfOperation": {
+                "sales": [
+                    {
+                        "reference": "RECLOC",
+                        "referenceOwner": "EY",
+                        "referenceType": "PNR",
+                        "salesItems": [
+                            {
+                                "category": "FLIGHT",
+                                "flightSalesDetails": {
+                                    "flightLegs": [
+                                        {
+                                            "flightNumber": "EY12456A",
+                                            "departureTime": "2023-06-30T11:40:00Z",
+                                            "departureAirportCode": "DEL",
+                                            "arrivalTime": "2023-06-30T13:40:00Z",
+                                            "arrivalAirportCode": "YYZ",
+                                            "carrierCode": "EY"
+                                        }
+                                    ],
+                                    "passenger": {
+                                        "name": {
+                                            "firstName": "MARIE",
+                                            "lastName": "JACOB"
+                                        },
+                                        "flightPassengerType": "ADULT"
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                ]
+            },
+            "pointOfInteraction": {
+                "location": {
+                    "address": {
+                        "countryCode": "US"
+                    }
+                }
+            },
+            "timestamp": "2023-05-22T23:59:55Z",
+            "operationContext": {
+                "merchantAccount": {
+                    "name": "ETIHAD",
+                    "login": "merchant.99114208",
+                    "password": {
+                        "payload": "4a53f61c8b0e24e8e096f3351f4ebbeb"
+                    }
+                },
+                "links": [
+                    {
+                        "href": "defaultCallbackURL",
+                        "rel": "default-callback"
+                    }
+                ],
+                "device": {
+                    "activeWebBrowser": {
+                        "ietfLanguageTag": "en-US"
+                    }
+                }
+            },
+            "amount": {
+                "value": "123.45",
+                "currencyCode": "USD"
+            }     
+        }
+    }
+
+    ```   
+        
+    Your application parses the request and after processing it returns a response such as:
+
+    ```
+        HTTP/1.1 202 Accepted
+        Content-Type: application/vnd.amadeus+json
+        
+        {
+            "data": {
+               "externalId": "1WX80207GX642472G",
+               "status": "ACCEPTED",
+               "timestamp": "2023-05-22T23:59:55Z",
+                "targetPayloads": [
+                    {
+                        "href": "REDIRECTION_WEB_PAGE",
+                        "method": "POST",
+                        "formPayload": [
+                            {"name": "param1", "value": "value1"},
+                            {"name": "param2", "value": "value2"}
+                        ],
+                        links: [
+                            {
+                                "rel": "resumption",
+                                 "href": "https://{your-host-name}/v1/instrument-orders/{instrument-orderId}/resumption"
+                             }
+                         ]
+                     }
+                 ]
+             }
+         }
+         
+     ```
+    After this succesful answer, the client is redirected to the *REDIRECTION_WEB_PAGE* in order to contract a funding with you. Once the contract is established, the client is redirected back to the *LANDING_PAGE*.
+
+    ### Instrument Order Resumption
+    After the checkout process described in the previous section, Amadeus Payment Gateway contacts your system to resume the instrument order. The request will be the following:
+
+    ```
+        POST https://{your-host-name}/v1/instrument-orders/{id}/resumption HTTP/1.1
+        Content-Type: application/vnd.amadeus+json
+        ...
+        
+        {}
+        
+    ```    
+
+    Depending of wether the instrument details are ready on your end at the time of the reception of the resumption request, your answer differs.
+
+    #### Instrument details ready
+
+    Your application parses the request and after processing it returns a response including the intrument details such as:
+
+    ```
+        HTTP/1.1 201 Created
+        Location: https://{your-host-name}/v1/instrument-orders/{id}
+        Content-Type: application/vnd.amadeus+json
+        
+        {
+            "data": {
+            "id": "a29874-f68c189c-c617-5876-b1ae-6d6aec9c812a",
+            "externalId": "1WX80207GX642472G",
+            "status": "CREATED",
+            "timestamp": "2023-05-22T23:59:55Z"
+                "virtualCard": {
+                        "card": {
+                        "vendorCode": "TP",
+                        "cardNumber": "1871000000000001",
+                        "cvv": "123",
+                        "expiryDate": "2024-12"
+                    },
+                    "limitations": {
+                      "numberOfPurchases": 1
+                    }
+                }
+            }
+        }
+        
+     ```
+     
+
+    ## API considerations
+
+    ### application/vnd.amadeus+json overall structure
+    Each request/response body is enclosed in a JSON envelope. The set of root level keys of that envelope is limited and support the API consumer pre-interactions. The main root level key is _data_ in input or in successful responses, and _errors_ for failing responses.
+
+    Here is an example of a successful response body:
+
+        {
+            "warnings": [
+                ...
+            ],
+            "data": {
+                ...
+            },
+            "dictionaries": {
+                ...
+            },
+            "included": [
+                ...
+            ],
+            "meta": {
+                ...
+            }
+        }
+
+    And here is an example of a successful collection response body:
+
+        {
+            "warnings": [
+                ...
+            ],
+            "data": [
+                ...
+            ],
+            "dictionaries": {
+                ...
+            },
+            "included": [
+                ...
+            ],
+            "meta": {
+                ...
+            },
+        }
+
+    Please note that request bodies are not expected to contain warnings or errors.
+
+    Here would be an example of a error response body:
+
+        {
+            "warnings": [
+                ...
+            ],
+            "errors": [
+                ...
+            ],
+            "meta": {
+                ...
+            }
+        }
+
+    Warnings are non-blocking issues encountered during processing. Errors are functionally blocking issues preventing a successful processing.
+
+
+    ### Semantic HTTP statuses
+
+    In this API, HTTP statuses are semantically applied.
+
+    Here are the main successful ones to consider (non-exhaustive list):
+    - **200 OK.** Processing of the operation is successful.
+    - **201 Created - FREQUENT business functional success.** Request was processed and resource instance was properly created.
+    - **202 Accepted - FREQUENT business functional success.** Request was received but processing of the operation is still ongoing (e.g. asynchronous processing).
+
+    And here are the main error categories returned (non-exhaustive list):
+    - **409 Conflict.** Conflicting operation, for instance due to concurrent long action or locked resource.
+    - **422 Unprocessable Entity - FREQUENT business functional failure.** Unprocessable request, mostly due to business context. 
+    - **424 Failed Dependency - FREQUENT business functional failure.** Business functional rejection from an external party downstream.
+    - **502 Bad Gateway.** Communication error in an external party downstream.
+    - **504 Gateway Timeout.** External party timeout error.  
+  contact:
+    name: Payment Open Platform
+    url: 'https://outpayce.com'
+    email: payment.support@amadeus.com
+  version: 1.1.A20240522
+host: your-host-name
+basePath: /outpayce/v1
+schemes:
+  - https
+paths:
+  '/instrument-orders/{id}/resumption':
+    post:
+      tags:
+        - Instrument
+      summary: ''
+      description: |-
+        This endpoint resumes an instrument order operaton after a successful redirection.
+
+        ## Inquiry call to PSP to get payment details
+        When the user is redirected to merchant page from the payment page by PSP ,Outpayce provides a capability of polling to your system and retrieving the payment status.
+
+        To perform this operation, Outpayce sent a payment operation to your system that accepted it. This operation is identified by its nature (i.e. Initilization) and its *id*. This *id*, is then used to trigger a polling operation to retrieve the card details from PSP as.
+
+        ```
+        POST https://your-host-name/outpayce/v1//instrument-orders/{id}/resumption
+        Content-Type: application/vnd.amadeus+json
+
+        ```
+        Your application parses the request and after processing it, returns a response such as:
+
+        ```
+        HTTP/1.1 201 Created
+        Content-Type: application/vnd.amadeus+json  
+        {
+            "data": {
+                "id": "a29874-f68c189c-c617-5876-b1ae-6d6aec9c812a",
+                "externalId": "externalId",
+                "status": "CREATED",
+                "timestamp": "2023-05-22T23:59:55Z"
+                "virtualCard": {
+                        "card": {
+                        "vendorCode": "TP",
+                        "cardNumber": "1871000000000001",
+                        "cvv": "123",
+                        "expiryDate": "2024-12"
+                    },
+            }
+        }  
+        ```
+        In event of an error, Outpayce would expect an error message such as : 
+        ```
+        {  
+        "errors": [
+            {
+              "status": 400,
+              "code": 477,
+              "title": "INVALID FORMAT",
+              "detail": "The currency code is invalid",
+              "source":
+              {
+                "parameter": "amount/currencyCode"
+              }
+            }
+          ]
+        }
+
+        ```
+        {
+          "errors": [
+            {
+              "status": 424,
+              "code": 24945,
+              "title": "WAITING FOR PAYMENT"
+            }
+          ]
+        }
+
+        ```
+        {
+          "errors": [
+            {
+              "status": 500,
+              "code": 414,
+              "title": "INTERNAL PROCESSING ERROR"
+            }
+          ]
+        }
+        ```
+        {
+          "errors": [
+            {
+              "status": 502,
+              "code": 5038,
+              "title": "TIME OUT ERROR UNKNOWN"
+            }
+          ]
+        }
+        ```
+        {
+          "errors": [
+            {
+              "status": 424,
+              "code": 33471,
+              "title": "PAYMENT ACTION DECLINED"
+            }
+          ]
+        }
+
+        ```
+      operationId: post-instrument-orders-resumption
+      produces:
+        - application/vnd.amadeus+json
+      consumes:
+        - application/vnd.amadeus+json
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: string
+        - in: body
+          name: body
+          schema:
+            $ref: '#/definitions/ResumptionQuery'
+      schemes:
+        - https
+      responses:
+        '201':
+          description: Created
+          schema:
+            $ref: '#/definitions/InstrumentOrderPayload'
+        '400':
+          $ref: '#/responses/error-response-400'
+        '403':
+          $ref: '#/responses/error-response-403'
+        '409':
+          $ref: '#/responses/error-response-409'
+        '422':
+          $ref: '#/responses/error-response-422'
+        '424':
+          $ref: '#/responses/error-response-424'
+        '500':
+          $ref: '#/responses/error-response-500'
+        '502':
+          $ref: '#/responses/error-response-502'
+      x-stoplight:
+        id: 0aq4yp5wg5vdm
+  '/instrument-orders/{id}':
+    put:
+      tags:
+        - Instrument
+      summary: ''
+      description: "This endpoint initiates an instrument order operation.\n\n# Examples of scenarios\n## Basic Alternative Payment Method Instrument order Transaction request\nThis is an operation to request a payment instrument to your system which will be used to pay a *Merchant* on behalf of one of its *clients*. During this operation, the *client* will be redirected to one your web pages in order to contract a 'Buy Now Pay Later' payment solution.\n\n### Request Examples\n\n### Instrument order sample request without travel data\n```\nPUT https://{your-host-name}/v1/instrument-orders/{id} HTTP/1.1\n    Content-Type: application/vnd.amadeus+json\n    ...\n    {\n    \"data\": {\n        \"id\": \"a29874-f68c189c-c617-5876-b1ae-6d6aec9c812a\",\n        \"method\": \"VIRTUALCARD\",\n        \"paymentMerchantReference\": \"VEPQQBAPUL301474106055\",\n        \"pointOfInteraction\": {\n            \"location\": {\n                \"address\": {\n                    \"countryCode\": \"US\"\n                }\n            }\n        },\n        \"timestamp\": \"2023-05-22T23:59:55Z\",\n        \"operationContext\": {\n            \"merchantAccount\": {\n                \"name\": \"ETIHAD\",\n                \"login\": \"merchant.99114208\",\n                \"password\": {\n                    \"payload\": \"4a53f61c8b0e24e8e096f3351f4ebbeb\"\n                }\n            },\n            \"links\": [\n                {\n                    \"href\": \"defaultCallbackURL\",\n                    \"rel\": \"default-callback\"\n                }\n            ],\n            \"device\": {\n                \"activeWebBrowser\": {\n                    \"ietfLanguageTag\": \"en-US\"\n                }\n            }\n        },\n        \"amount\": {\n            \"value\": \"123.45\",\n            \"currencyCode\": \"USD\"\n        }     \n    }\n}\n  \n```\n\n### Instrument order sample request with Travel data\n```\nPUT https://{your-host-name}/v1/instrument-orders/{id} HTTP/1.1\n    Content-Type: application/vnd.amadeus+json\n    ...\n    {\n    \"data\": {\n        \"id\": \"a29874-f68c189c-c617-5876-b1ae-6d6aec9c812a\",\n        \"method\": \"VIRTUALCARD\",\n        \"paymentMerchantReference\": \"VEPQQBAPUL301474106055\",\n        \"purposeOfOperation\": {\n            \"sales\": [\n                {\n                    \"reference\": \"RECLOC\",\n                    \"referenceOwner\": \"EY\",\n                    \"referenceType\": \"PNR\",\n                    \"salesItems\": [\n                        {\n                            \"category\": \"FLIGHT\",\n                            \"flightSalesDetails\": {\n                                \"flightLegs\": [\n                                    {\n                                        \"flightNumber\": \"EY12456A\",\n                                        \"departureTime\": \"2023-06-30T11:40:00Z\",\n                                        \"departureAirportCode\": \"DEL\",\n                                        \"arrivalTime\": \"2023-06-30T13:40:00Z\",\n                                        \"arrivalAirportCode\": \"YYZ\",\n                                        \"carrierCode\": \"EY\"\n                                    }\n                                ],\n                                \"passenger\": {\n                                    \"name\": {\n                                        \"firstName\": \"MARIE\",\n                                        \"lastName\": \"JACOB\"\n                                    },\n                                    \"flightPassengerType\": \"ADULT\"\n                                }\n                            }\n                        }\n                    ]\n                }\n            ]\n        },\n        \"pointOfInteraction\": {\n            \"location\": {\n                \"address\": {\n                    \"countryCode\": \"US\"\n                }\n            }\n        },\n        \"timestamp\": \"2023-05-22T23:59:55Z\",\n        \"operationContext\": {\n            \"merchantAccount\": {\n                \"name\": \"ETIHAD\",\n                \"login\": \"merchant.99114208\",\n                \"password\": {\n                    \"payload\": \"4a53f61c8b0e24e8e096f3351f4ebbeb\"\n                }\n            },\n            \"links\": [\n                {\n                    \"href\": \"defaultCallbackURL\",\n                    \"rel\": \"default-callback\"\n                }\n            ],\n            \"device\": {\n                \"activeWebBrowser\": {\n                    \"ietfLanguageTag\": \"en-US\"\n                }\n            }\n        },\n        \"amount\": {\n            \"value\": \"123.45\",\n            \"currencyCode\": \"USD\"\n        }     \n    }\n}\n  \n```\n\n### Instrument order sample request with Multiple Travel segment data\n```\nPUT https://{your-host-name}/v1/instrument-orders/{id} HTTP/1.1\n    Content-Type: application/vnd.amadeus+json\n    ...\n    {\n    \"data\": {\n        \"id\": \"a29874-f68c189c-c617-5876-b1ae-6d6aec9c812a\",\n        \"method\": \"VIRTUALCARD\",\n        \"paymentMerchantReference\": \"VEPQQBAPUL301474106055\",\n        \"purposeOfOperation\": {\n            \"sales\": [\n                {\n                    \"reference\": \"RECLOC\",\n                    \"referenceOwner\": \"EY\",\n                    \"referenceType\": \"PNR\",\n                    \"salesItems\": [\n                        {\n                            \"category\": \"FLIGHT\",\n                            \"flightSalesDetails\": {\n                                \"flightLegs\": [\n                                    {\n                                        \"flightNumber\": \"EY12456A\",\n                                        \"departureTime\": \"2023-06-30T11:40:00Z\",\n                                        \"departureAirportCode\": \"NCE\",\n                                        \"arrivalTime\": \"2023-06-30T13:40:00Z\",\n                                        \"arrivalAirportCode\": \"PAR\",\n                                        \"carrierCode\": \"EY\"\n                                    }\n                                      {\n                                        \"flightNumber\": \"EY12455B\",\n                                        \"departureTime\": \"2023-06-30T11:40:00Z\",\n                                        \"departureAirportCode\": \"YYZ\",\n                                        \"arrivalTime\": \"2023-06-30T13:40:00Z\",\n                                        \"arrivalAirportCode\": \"PAR\",\n                                        \"carrierCode\": \"EY\"\n                                    }\n                                ],\n                                \"passenger\": {\n                                    \"name\": {\n                                        \"firstName\": \"MARIE\",\n                                        \"lastName\": \"JACOB\"\n                                    },\n                                    \"flightPassengerType\": \"ADULT\"\n                                }\n                            }\n                        }\n                    ]\n                }\n            ]\n        },\n        \"pointOfInteraction\": {\n            \"location\": {\n                \"address\": {\n                    \"countryCode\": \"US\"\n                }\n            }\n        },\n        \"timestamp\": \"2023-05-22T23:59:55Z\",\n        \"operationContext\": {\n            \"merchantAccount\": {\n                \"name\": \"ETIHAD\",\n                \"login\": \"merchant.99114208\",\n                \"password\": {\n                    \"payload\": \"4a53f61c8b0e24e8e096f3351f4ebbeb\"\n                }\n            },\n            \"links\": [\n                {\n                    \"href\": \"defaultCallbackURL\",\n                    \"rel\": \"default-callback\"\n                }\n            ],\n            \"device\": {\n                \"activeWebBrowser\": {\n                    \"ietfLanguageTag\": \"en-US\"\n                }\n            }\n        },\n        \"amount\": {\n            \"value\": \"123.45\",\n            \"currencyCode\": \"USD\"\n        }     \n    }\n}\n  \n```\n### Instrument order sample request with Multiple passenger Travel data\n```\nPUT https://{your-host-name}/v1/instrument-orders/{id} HTTP/1.1\n    Content-Type: application/vnd.amadeus+json\n    ...\n    {\n    \"data\": {\n        \"id\": \"a29874-f68c189c-c617-5876-b1ae-6d6aec9c812a\",\n        \"method\": \"VIRTUALCARD\",\n        \"paymentMerchantReference\": \"VEPQQBAPUL301474106055\",\n        \"purposeOfOperation\": {\n            \"sales\": [\n                {\n                    \"reference\": \"RECLOC\",\n                    \"referenceOwner\": \"EY\",\n                    \"referenceType\": \"PNR\",\n                    \"salesItems\": [\n                        {\n                            \"category\": \"FLIGHT\",\n                            \"flightSalesDetails\": {\n                                \"flightLegs\": [\n                                    {\n                                        \"flightNumber\": \"EY12456A\",\n                                        \"departureTime\": \"2023-06-30T11:40:00Z\",\n                                        \"departureAirportCode\": \"DEL\",\n                                        \"arrivalTime\": \"2023-06-30T13:40:00Z\",\n                                        \"arrivalAirportCode\": \"YYZ\",\n                                        \"carrierCode\": \"EY\"\n                                    }\n                                ],\n                                \"passenger\": {\n                                    \"name\": {\n                                        \"firstName\": \"MARIE\",\n                                        \"lastName\": \"JACOB\"\n                                    },\n                                    \"flightPassengerType\": \"ADULT\"\n                                }\n                            }\n                        }\n                    ]\n\t      \"salesItems\": [\n                        {\n                            \"category\": \"FLIGHT\",\n                            \"flightSalesDetails\": {\n                                \"flightLegs\": [\n                                    {\n                                        \"flightNumber\": \"EY12456A\",\n                                        \"departureTime\": \"2023-06-30T11:40:00Z\",\n                                        \"departureAirportCode\": \"DEL\",\n                                        \"arrivalTime\": \"2023-06-30T13:40:00Z\",\n                                        \"arrivalAirportCode\": \"YYZ\",\n                                        \"carrierCode\": \"EY\"\n                                    }\n                                ],\n                                \"passenger\": {\n                                    \"name\": {\n                                        \"firstName\": \"John\",\n                                        \"lastName\": \"JACOB\"\n                                    },\n                                    \"flightPassengerType\": \"ADULT\"\n                                }\n                            }\n                        }\n                    ]\n                }\n            ]\n        },\n        \"pointOfInteraction\": {\n            \"location\": {\n                \"address\": {\n                    \"countryCode\": \"US\"\n                }\n            }\n        },\n        \"timestamp\": \"2023-05-22T23:59:55Z\",\n        \"operationContext\": {\n            \"merchantAccount\": {\n                \"name\": \"ETIHAD\",\n                \"login\": \"merchant.99114208\",\n                \"password\": {\n                    \"payload\": \"4a53f61c8b0e24e8e096f3351f4ebbeb\"\n                }\n            },\n            \"links\": [\n                {\n                    \"href\": \"defaultCallbackURL\",\n                    \"rel\": \"default-callback\"\n                }\n            ],\n            \"device\": {\n                \"activeWebBrowser\": {\n                    \"ietfLanguageTag\": \"en-US\"\n                }\n            }\n        },\n        \"amount\": {\n            \"value\": \"123.45\",\n            \"currencyCode\": \"USD\"\n        }     \n    }\n}\n````  \n###Instrument order sample response\n````\nHTTP/1.1 202 Accepted\nContent-Type: application/vnd.amadeus+json \n.......\n\n  {\n    \"data\": {\n        \"id\": \"a29874-f68c189c-c617-5876-b1ae-6d6aec9c812a\",\n        \"externalId\": \"uplift unique transactionId\",\n        \"status\": \"ACCEPTED\",\n         \"timestamp\": \"2024-02-28T16:47:11\",\n        \"targetPayloads\": [\n            {\n                \"href\": \"uplift redirection url\",\n                \"method\": \"POST\",\n                \"formPayload\": [\n                    {\n                        \"name\": \"amount\",\n                        \"value\": \"123.45\"\n                    },\n                    {\n                        \"name\": \"currencyCode\",\n                        \"value\": \"USD\"\n                    }\n                ]\n            }\n        ]\n    }\n}\n\n\n````\n###Error response\n````\n{\n  \"errors\": [\n    {\n      \"status\": 400,\n      \"code\": 477,\n      \"title\": \"INVALID FORMAT\",\n      \"detail\": \"The currency code is invalid \",\n      \"source\":\n      {\n        \"parameter\": \"amount/currencyCode\"\n      }\n    }\n  ]\n}\n\n```\n{\n  \"errors\": [\n    {\n      \"status\": 424,\n      \"code\": 33471,\n      \"title\": \"PAYMENT ACTION DECLINED\"\n    }\n  ]\n}\n```"
+      operationId: put-instrument-orders-id
+      produces:
+        - application/vnd.amadeus+json
+      consumes:
+        - application/vnd.amadeus+json
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: string
+        - in: body
+          name: body
+          schema:
+            $ref: '#/definitions/InstrumentOrderPayload'
+      schemes:
+        - https
+      responses:
+        '201':
+          description: Created
+          schema:
+            $ref: '#/definitions/InstrumentOrderResponse'
+          headers:
+            location:
+              description: A link to the newly created resource
+              type: string
+        '202':
+          description: Accepted
+          schema:
+            $ref: '#/definitions/InstrumentOrderResponse'
+        '400':
+          description: |
+            **400 Bad Request error.** Problem reading or understanding request (Usually missing data or invalid requests). Please find below an exhaustive list of errors:
+
+            code   | - | title
+            ------:|:-:|:-
+            33460  |   | MISSING REQUIRED INPUT PARAM(S) - PLEASE ADJUST REQUEST
+            33459  |   | INVALID INPUT PARAM(S) - PLEASE ADJUST REQUEST
+            00477  |   | INVALID FORMAT
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+          examples:
+            INVALID FORMAT:
+              errors:
+                - code: 477
+                  title: INVALID FORMAT
+        '401':
+          description: Unauthorized
+          schema:
+            type: object
+        '403':
+          description: |
+            **403 Forbidden error.** Generic error linked to permission mismatch. Please find below a non-exhaustive list of errors:
+
+            code   | - | title
+            ------:|:-:|:-
+            01666  |   | NOT ALLOWED
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+          examples:
+            NOT ALLOWED:
+              errors:
+                - code: 1666
+                  title: NOT ALLOWED
+        '409':
+          description: |
+            **409 Conflict error.** Generic error linked to conflicting operation. Please find below a non-exhaustive list of errors:
+
+            code   | - | title
+            ------:|:-:|:-
+            33474  |   | PAYMENT TRANSACTION CANCELLED EXTERNALLY.
+            25754  |   | REVERSAL ALREADY PERFORMED
+            33477  |   | PAYMENT TRANSACTION ALREADY CANCELLED OR REFUNDED
+            33478  |   | PAYMENT TRANSACTION ALREADY TOTALLY CANCELLED OR REFUNDED
+            33479  |   | PAYMENT TRANSACTION EXPIRED.
+            25888  |   | PARTIAL REVERSAL DISALLOWED
+            33869  |   | PAYMENT REVERSAL DENIAL DUE TO CAPTURE PROCESSED
+            39041  |   | DUPLICATE REQUEST ERROR
+            09659  |   | CC REVERSAL HAS BEEN LOCKED FOR THIS CARD BY ISSUEING BANK
+            33034  |   | OUT OF REFUND PERIOD
+            33562  |   | PAYMENT PARTIAL REFUND NOT ALLOWED
+            33548  |   | PAYMENT PARTIAL CAPTURE NOT ALLOWED
+             6617  |   | REFUND AMOUNT GREATER THAN SALE
+            42048  |   | UNABLE TO PROCESS REFUND - PARENT OPERATION ID REQUIRED 
+            30366  |   | TRANSACTION ABORTED
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+          examples:
+            Payment was invalid:
+              errors:
+                - code: 33474
+                  title: PAYMENT TRANSACTION CANCELLED EXTERNALLY.
+        '422':
+          description: "**422 Unprocessable Entity error.** Generic error linked to unprocessable request. Please find below a non-exhaustive list of errors:\n\ncode   | - | title\n------:|:-:|:-\n00011  |   | \tUNABLE TO PROCESS\n01304  |   |  CREDIT CARD NOT ACCEPTED\n"
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+          examples:
+            CREDIT CARD NOT ACCEPTED:
+              errors:
+                - code: 1304
+                  title: CREDIT CARD NOT ACCEPTED
+        '424':
+          description: |
+            **424 Failed Dependency error.** Generic error linked to 3rd party functional rejection. Please find below a non-exhaustive list of errors:
+
+            code   | - | title
+            ------:|:-:|:-
+            04751  |   | INVALID CARD
+            33480  |   | PAYMENT TRANSACTION DECLINED. SUSPECTED FRAUD
+            12678  |   | CC SECURITY ID DOES NOT MATCH
+            04223  |   | NAME MISMATCH
+            12550  |   | AUTHORISATION DENIED INSUFFICIENT FUNDS
+            34869  |   | CREDIT CARD DENIAL - INCORRECT PIN
+            34477  |   | REVERSAL NOT PERFORMED
+            33471  |   | PAYMENT ACTION DECLINED
+            65222  |   | PAYMENT REQUIRES 3D SECURE
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+          examples:
+            PAYMENT ACTION DECLINED:
+              errors:
+                - code: 33471
+                  title: PAYMENT ACTION DECLINED
+        '500':
+          description: |
+            **500 Internal Server Error error.** Generic Amadeus internal error. Please find below a non-exhaustive list of errors:
+
+            code   | - | title
+            ------:|:-:|:-
+            00974  |   | SYSTEM UNAVAILABLE
+            00414  |   | INTERNAL PROCESSING ERROR
+            02894  |   | ERROR MESSAGE NOT FOUND
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+          examples:
+            ERROR MESSAGE NOT FOUND:
+              errors:
+                - code: 2894
+                  title: ERROR MESSAGE NOT FOUND
+      x-stoplight:
+        id: 30z6fvb7tayby
+    get:
+      tags:
+        - Instrument
+      summary: Your GET endpoint
+      description: This endpoint returns an instrument order.
+      operationId: get-instrument-orders
+      produces:
+        - application/vnd.amadeus+json
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: string
+        - name: if-none-match
+          in: header
+          type: string
+      schemes:
+        - https
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/InstrumentOrderPayload'
+          headers:
+            etag:
+              type: string
+        '202':
+          description: Accepted
+          schema:
+            $ref: '#/definitions/InstrumentOrderResponse'
+          headers:
+            etag:
+              type: string
+        '304':
+          description: Not Modified
+          schema:
+            type: object
+          headers:
+            etag:
+              type: string
+        '401':
+          description: Unauthorized
+          schema:
+            type: object
+        '403':
+          description: |
+            **409 Conflict error.** Generic error linked to conflicting operation. Please find below a non-exhaustive list of errors:
+
+            code   | - | title
+            ------:|:-:|:-
+            33474  |   | PAYMENT TRANSACTION CANCELLED EXTERNALLY.
+            25754  |   | REVERSAL ALREADY PERFORMED
+            33477  |   | PAYMENT TRANSACTION ALREADY CANCELLED OR REFUNDED
+            33478  |   | PAYMENT TRANSACTION ALREADY TOTALLY CANCELLED OR REFUNDED
+            33479  |   | PAYMENT TRANSACTION EXPIRED.
+            25888  |   | PARTIAL REVERSAL DISALLOWED
+            33869  |   | PAYMENT REVERSAL DENIAL DUE TO CAPTURE PROCESSED
+            39041  |   | DUPLICATE REQUEST ERROR
+            09659  |   | CC REVERSAL HAS BEEN LOCKED FOR THIS CARD BY ISSUEING BANK
+            33034  |   | OUT OF REFUND PERIOD
+            33562  |   | PAYMENT PARTIAL REFUND NOT ALLOWED
+            33548  |   | PAYMENT PARTIAL CAPTURE NOT ALLOWED
+             6617  |   | REFUND AMOUNT GREATER THAN SALE
+            42048  |   | UNABLE TO PROCESS REFUND - PARENT OPERATION ID REQUIRED 
+            30366  |   | TRANSACTION ABORTED
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+          examples:
+            Payment was invalid:
+              errors:
+                - code: 33474
+                  title: PAYMENT TRANSACTION CANCELLED EXTERNALLY.
+        '404':
+          description: Not Found
+          schema:
+            type: object
+        '500':
+          $ref: '#/responses/undefined'
+      x-stoplight:
+        id: 58z0yfi0e051f
+  '/refunds/{id}':
+    put:
+      tags:
+        - Clearing
+      summary: ''
+      description: "This endpoint initiates an refund operation.\n\n## Example of a Refund scenario - APM\n   \n```\nPUT https://{your-host-name}/outpayce/v1/refunds/{refundId} HTTP/1.1\nContent-Type: application/vnd.amadeus+json\n...\n\n\n{\n  \"data\": {\n    \"parentOperationId\": \"{authorizationId}\",\n    \"id\": \"{refundId}\",\n    \"amount\": {\n      \"value\": \"75.24\",\n      \"currencyCode\": \"EUR\"\n    },\n    \"timestamp\": \"2022-11-28T13:37:00Z\",\n    \n    \"method\": \"AMOP\",\n    \"operationContext\": {\n      \"merchantAccount\": {\n          \"name\": \"MERCHANT_ACCOUNT\",\n          \"login\": \"merchantLogin\",\n          \"password\": {\n             \"payload\":\"merchantPasword\"\n            } \n        }, \n      \"links\": [\n          {\n              \"rel\": \"webhook\",\n              \"href\": \"https://{your-organization-name-in-outpayce}.payment.feeds.outpayce.com/v1/payment/3rd-party-gateway/{your-organization-name-in-outpayce}/refunds/{refundId}/events\"\n          }\n      ]\n    }\n  }\n}\n```\n## Example of a Refund scenario - APM with Travel Data\n```\n{\n\t\"data\": {\n\t\t\"parentOperationId\": \"{authorizationId}\",\n\t\t\"id\": \"{refundId}\",\n\t\t\"externalId\": \"{externalId}\",\n\t\t\"amount\": {\n\t\t\t\"value\": \"75.24\",\n\t\t\t\"currencyCode\": \"EUR\"\n\t\t},\n\t\t\"timestamp\": \"2022-11-28T13:37:00Z\",\n\t\t\"method\": \"AMOP\",\n\t\t\"purposeOfOperation\": {\n\t\t\t\"sales\": [\n\t\t\t\t{\n\t\t\t\t\t\"salesItems\": [\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\"flightSalesDetails\": {\n\t\t\t\t\t\t\t\t\"ticketNumber\": \"1250123456789\"\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t}\n\t\t\t\t\t]\n\t\t\t\t}\n\t\t\t]\n\t\t},\n\t\t\"operationContext\": {\n\t\t\t\"merchantAccount\": {\n\t\t\t\t\"name\": \"MERCHANT_ACCOUNT\",\n\t\t\t\t\"login\": \"merchantLogin\",\n\t\t\t\t\"password\": {\n\t\t\t\t\t\"payload\": \"merchantPasword\"\n\t\t\t\t}\n\t\t\t},\n\t\t\t\"links\": [\n\t\t\t\t{\n\t\t\t\t\t\"rel\": \"webhook\",\n\t\t\t\t\t\"href\": \"https://{your-organization-name-in-outpayce}.payment.feeds.outpayce.com/v1/payment/3rd-party-gateway/{your-organization-name-in-outpayce}/refunds/{refundId}/events\"\n\t\t\t\t}\n\t\t\t]\n\t\t}\n\t}\n}\n```\n\n\nYour application parses the request and after processing it, returns a response such as:\n```\nHTTP/1.1 201 Created\nLocation: https://{your-host-name}/outpayce/v1/refunds/{refundId}\nContent-Type: application/vnd.amadeus+json\n\n  {\n  \"data\": {\n    \"parentOperationId\": \"{authorizationId}\",\n    \"id\": \"{refundId}\",\n    \"method\": \"AMOP\",\n    \"amount\": {\n      \"value\": \"123.45\",\n      \"currencyCode\": \"EUR\"\n    },\n    \"status\": \"RECEIVED\",\n    \"timestamp\": \"2022-11-29-T11:22:00Z\"\n  }\n}\n```\n\n\nError response\n```\n{\n  \"errors\": [\n    {\n      \"status\": 400,\n      \"code\": 477,\n      \"title\": \"INVALID FORMAT\",\n      \"detail\": \"The currency code is invalid \",\n      \"source\":\n      {\n        \"parameter\": \"amount/currencyCode\"\n      }\n    }\n  ]\n}\n```\n```\n{\n  \"errors\": [\n    {\n      \"status\": 403,\n      \"code\": 1666,\n      \"title\": \"NOT ALLOWED\"\n    }\n  ]\n}\n```\n```\n{\n  \"errors\": [\n    {\n      \"status\": 409,\n      \"code\": 39041,\n      \"title\": \"DUPLICATE REQUEST ERROR\"\n    }\n  ]\n}\n```\n```\n{\n  \"errors\": [\n    {\n      \"status\": 422,\n      \"code\": 11,\n      \"title\": \"UNABLE TO PROCESS\"\n    }\n  ]\n}\n```\n```\n{\n  \"errors\": [\n    {\n      \"status\": 424,\n      \"code\": 33471,\n      \"title\": \"PAYMENT ACTION DECLINED\"\n    }\n  ]\n}\n```\n```\n{\n  \"errors\": [\n    {\n      \"status\": 500,\n      \"code\": 414,\n      \"title\": \"INTERNAL PROCESSING ERROR\"\n    }\n  ]\n}\n```\n```\n{\n  \"errors\": [\n    {\n      \"status\": 502,\n      \"code\": 5038,\n      \"title\": \"TIMEOUT ERROR UNKNOWN\"\n    }\n  ]\n}\n\n```\n"
+      operationId: put-refunds-id
+      produces:
+        - application/vnd.amadeus+json
+      consumes:
+        - application/vnd.amadeus+json
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: string
+        - in: body
+          name: body
+          schema:
+            $ref: '#/definitions/RefundPayload'
+      schemes:
+        - https
+      responses:
+        '201':
+          description: Created
+          schema:
+            $ref: '#/definitions/RefundPayload'
+        '400':
+          $ref: '#/responses/undefined'
+        '401':
+          description: Unauthorized
+          schema:
+            type: object
+        '403':
+          $ref: '#/responses/undefined'
+        '409':
+          description: Conflict
+          schema:
+            type: object
+        '422':
+          $ref: '#/responses/undefined'
+        '424':
+          $ref: '#/responses/undefined'
+        '500':
+          $ref: '#/responses/undefined'
+        '502':
+          description: Bad Gateway
+          schema:
+            type: object
+      x-stoplight:
+        id: w9d8f9ik9v31x
+  '/authorizations/{id}/resumption':
+    post:
+      tags:
+        - Acceptance
+      summary: ''
+      description: |
+        This endpoints resumes an authorization operation after a successful end user redirection to a payment page.
+
+        ## Steps
+        ### Step 2 - Inquiring Payment Status to PSP 
+
+        In event of non-receipt of final Payment status by Outpayce via "Webhook Notification" (For more details about this step, please refer to the Payment Operations Events swagger.) or "Frontend Notification" (For more details about this step, please refer to the Inteface Control Document.), Outpayce provides a capability of polling to your system and retrieving the payment status. 
+
+        To perform this operation, Outpayce sent a payment operation to your system that accepted it. This operation is identified by its nature (i.e. authorizations) and its *id*. This *id*, is then used to trigger a polling operation to retrieve the final payment status such as : 
+
+
+        ```
+        POST https://your-host-name/outpayce/v1/authorizations/{authorizationId}/resumption
+        Content-Type: application/vnd.amadeus+json
+
+        ```
+        Your application parses the request and after processing it, returns a response such as:
+
+        ```
+        HTTP/1.1 201 Created
+        Content-Type: application/vnd.amadeus+json  
+        {
+            "data": {
+                "id": "{authorizationId}",
+                "externalId": "externalId",
+                "status": "AUTHORIZED",
+                "timestamp": "2023-05-22T23:59:55Z",
+                "operationContext": {
+                    "merchantAccount": {
+                        "name": "MERCHANT_ACCOUNT"
+                    }
+                },
+                "amount": {
+                    "value": "123.45",
+                    "currencyCode": "EUR"
+                },
+                "paymentMerchantReference": "merchantReference"
+            }
+        }  
+        ```
+        In event of an error, Outpayce would expect an error message such as : 
+
+        ```
+        {  
+        "errors": [
+            {
+              "status": 400,
+              "code": 477,
+              "title": "INVALID FORMAT ",
+              "detail": "The currency code is invalid ",
+              "source":
+              {
+                "parameter": "amount/currencyCode"
+              }
+            }
+          ]
+        }
+
+        ```
+        ```
+        {
+          "errors": [
+            {
+              "status": 424,
+              "code": 24945,
+              "title": "WAITING FOR PAYMENT"
+            }
+          ]
+        }
+        ```
+        ```
+        {
+          "errors": [
+            {
+              "status": 500,
+              "code": 414,
+              "title": "INTERNAL PROCESSING ERROR"
+            }
+          ]
+        }
+        ```
+        ```
+        {
+          "errors": [
+            {
+              "status": 502,
+              "code": 5038,
+              "title": "TIME OUT ERROR UNKNOWN"
+            }
+          ]
+        }
+
+
+        ```
+      operationId: post-authorization-id-resumption
+      produces:
+        - application/vnd.amadeus+json
+      consumes:
+        - application/vnd.amadeus+json
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: string
+        - in: body
+          name: body
+          schema:
+            $ref: '#/definitions/ResumptionQuery'
+      schemes:
+        - https
+      responses:
+        '201':
+          description: Created
+          schema:
+            $ref: '#/definitions/AuthorizationPayload'
+          headers:
+            location:
+              description: A link to the newly created resource.
+              type: string
+        '202':
+          description: Accepted
+          schema:
+            $ref: '#/definitions/AuthorizationResponse'
+        '400':
+          $ref: '#/responses/undefined'
+        '401':
+          description: Unauthorized
+          schema:
+            type: object
+        '403':
+          $ref: '#/responses/undefined'
+        '404':
+          description: Not Found
+          schema:
+            type: object
+        '409':
+          $ref: '#/responses/undefined'
+        '422':
+          $ref: '#/responses/undefined'
+        '424':
+          $ref: '#/responses/undefined'
+        '500':
+          $ref: '#/responses/undefined'
+        '502':
+          description: Bad Gateway
+          schema:
+            type: object
+      x-stoplight:
+        id: 6fz7b0h08m4c6
+  '/authorizations/{id}':
+    put:
+      tags:
+        - Acceptance
+      summary: ''
+      description: |
+        This endpoint initiates an authorization operation.
+        # Examples of scenarios
+
+        ## Basic Alternative Payment Method Initiated Transaction 
+        This is basic authorization scenario where information is provided to initiate and alternative payment method transaction and enable merchant to redirect to payment page. This data is the minimum amount of data Outpayce will always send as part of an authorization request.
+
+        ### Request Examples
+
+        ## Basic Alternative Payment Method Initiated Transaction 
+        ```
+        PUT https://{your-host-name}/outpayce/v1/authorizations/{authorizationId} HTTP/1.1
+        Content-Type: application/vnd.amadeus+json
+        ...
+        {
+           "data":{
+              "id":"{authorizationId}",
+              "method":"AMOP",
+              "amount": {
+                  "value": "123.45",
+                  "currencyCode": "EUR"
+              },
+             "instrument": {
+                    "paymentSystem": "PAYPAL"
+                },
+              "paymentMerchantReference": "merchantReference",
+              "authorizationType": "AUTHOR_AND_CAPTURE",
+              "timestamp":"current",
+              "pointOfInteraction":{
+                 "location":{
+                    "address":{
+                       "countryCode":"IN"
+                    }
+                  }  
+                 },
+              "operationContext":{
+                 "merchantAccount":{
+                    "name":"MERCHANT_ACCOUNT",
+                    "login":"merchantLogin",
+                    "password":{
+                       "payload":"merchantPasword"
+                    }
+                 },
+                "links": [
+                  {
+                    "rel":"defaultCallbackURL",
+                    "href":"default-callback",
+                   },
+                  
+                  {
+                     "rel": "webhook",
+                      "href": "https://{your-organization-name-in-outpayce}.payment.feeds.outpayce.com/v1/payment/3rd-party-gateway/{your-organization-name-in-outpayce}/authorizations/{authorizationId}/events"
+                   }
+                ],
+                "device": {
+                  "activeWebBrowser": {
+                     "ietfLanguageTag": "en-IN"
+                  }
+                }
+              }
+           }
+        }
+        ```
+
+        ## Basic Alternative Payment Method Initiated Transaction with Travel Data 
+        ```
+        PUT https://{your-host-name}/outpayce/v1/authorizations/{authorizationId} HTTP/1.1
+        Content-Type: application/vnd.amadeus+json
+        ...
+        {
+           "data":{
+              "id":"{authorizationId}",
+              "method":"AMOP",
+              "amount": {
+                  "value": "123.45",
+                  "currencyCode": "EUR"
+              },
+             "instrument": {
+                    "paymentSystem": "PAYPAL"
+                },
+              "paymentMerchantReference": "merchantReference",
+              "authorizationType": "AUTHOR_AND_CAPTURE",
+              "purposeOfOperation":{
+                 "sales":[
+                    {
+                       "reference":"MERCHANT_REFERENCE",
+                       "referenceOwner":"MERCHANT",
+                       "referenceType":"PNR",
+                       "salesItems":[
+                       {
+                          "category":"FLIGHT",
+                          "flightSalesDetails":{
+                             "flightLegs":[
+                                {
+                                   "flightNumber":"6X12456A",
+                                   "departureTime":"2023-06-30T11:40:00Z",
+                                   "departureAirportCode":"NCE",
+                                   "arrivalTime":"2023-06-30T13:40:00Z",
+                                   "arrivalAirportCode":"PAR",
+                                   "carrierCode":"6X",
+                                   "serviceClass":"L"
+                                }
+                             ],
+                          
+                          "passenger":{
+                             "name":{
+                                "firstName":"MARIE",
+                                "lastName":"JACOB"
+                             },
+                             "flightPassengerType":"ADULT"
+                          }
+                       }
+                    }
+                 ]
+                }
+              ]  
+             },
+              "pointOfInteraction":{
+                 "location":{
+                    "address":{
+                       "countryCode":"IN"
+                    }
+                   } 
+                 },
+              "timestamp":"current",
+              "operationContext":{
+                 "merchantAccount":{
+                    "name":"MERCHANT_ACCOUNT",
+                    "login":"merchantLogin",
+                    "password":{
+                       "payload":"merchantPasword"
+                    }
+                 },
+                "links": [
+                  {
+                    "rel":"default-callback",
+                    "href":"default-callback URL",
+                   },
+                  
+                  {
+                     "rel": "webhook",
+                      "href": "https://{your-organization-name-in-outpayce}.payment.feeds.outpayce.com/v1/payment/3rd-party-gateway/{your-organization-name-in-outpayce}/authorizations/{authorizationId}/events"
+                   }
+                ],
+                "device": {
+                  "activeWebBrowser": {
+                     "ietfLanguageTag": "en-IN"
+                  }
+                }
+              }
+           }
+        }   
+        ```
+        ```
+        Response
+        ```
+        HTTP/1.1 202 Accepted
+        Content-Type: application/vnd.amadeus+json 
+        {
+          "data": {
+            "externalId": "1WX80207GX642472G",
+            "status": "ACCEPTED",
+            "timestamp": "2023-05-22T23:59:55Z",
+            "targetPayloads": [
+              {
+                "href": "REDIRECTION_WEB_PAGE",
+                "method": "POST",
+                "formPayload": [
+                  {
+                    "name": "amount",
+                    "value": "123.45"
+                  },
+                  {
+                    "name": "currencyCode",
+                    "value": "EUR"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+
+        ```
+        Error response
+        ```
+        {
+          "errors": [
+            {
+              "status": 400,
+              "code": 477,
+              "title": "INVALID FORMAT",
+              "detail": "The currency code is invalid ",
+              "source":
+              {
+                "parameter": "amount/currencyCode"
+              }
+            }
+          ]
+        }
+        ```
+        ```
+        {
+          "errors": [
+            {
+              "status": 403,
+              "code": 1666,
+              "title": "NOT ALLOWED"
+            }
+          ]
+        }
+        ```
+        ```
+        {
+          "errors": [
+            {
+              "status": 409,
+              "code": 39041,
+              "title": "DUPLICATE REQUEST ERROR"
+            }
+          ]
+        }
+        ```
+        ```
+        {
+          "errors": [
+            {
+              "status": 422,
+              "code": 11,
+              "title": "UNABLE TO PROCESS"
+            }
+          ]
+        }
+        ```
+        ```
+        {
+          "errors": [
+            {
+              "status": 424,
+              "code": 33471,
+              "title": "PAYMENT ACTION DECLINED"
+            }
+          ]
+        }
+        ```
+        ```
+        {
+          "errors": [
+            {
+              "status": 500,
+              "code": 414,
+              "title": "INTERNAL PROCESSING ERROR"
+            }
+          ]
+        }
+        ```
+        ```
+        {
+          "errors": [
+            {
+              "status": 502,
+              "code": 5038,
+              "title": "TIMEOUT ERROR UNKNOWN"
+            }
+          ]
+        }
+
+        ```
+      operationId: put-authorizations
+      produces:
+        - application/vnd.amadeus+json
+      consumes:
+        - application/vnd.amadeus+json
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: string
+        - in: body
+          name: body
+          schema:
+            $ref: '#/definitions/AuthorizationPayload'
+      schemes:
+        - https
+      responses:
+        '201':
+          description: Created
+          schema:
+            $ref: '#/definitions/AuthorizationResponse'
+          headers:
+            location:
+              description: A link to the newly created resource.
+              type: string
+        '202':
+          description: Accepted
+          schema:
+            $ref: '#/definitions/AuthorizationResponse'
+        '400':
+          $ref: '#/responses/undefined'
+        '401':
+          description: Unauthorized
+          schema:
+            type: object
+        '403':
+          $ref: '#/responses/undefined'
+        '409':
+          $ref: '#/responses/undefined'
+        '422':
+          $ref: '#/responses/undefined'
+        '424':
+          $ref: '#/responses/undefined'
+        '500':
+          $ref: '#/responses/undefined'
+        '502':
+          description: Bad Gateway
+          schema:
+            type: object
+      x-stoplight:
+        id: mzjz241lnnlik
+tags:
+  - name: Operation
+    description: |
+      **CREATING A PAYMENT OR PAYMENT INSTRUMENT RELATED OPERATION**
+  - name: Acceptance
+    description: |
+      **ESTABLISHING THE PAYMENT CONTRACT**
+  - name: Clearing
+    description: |
+      **TRANSFERRING THE MONEY**
+  - name: Instrument
+    description: |
+      **RETRIEVING A PAYMENT INSTRUMENT**
+definitions:
+  ResumptionQuery:
+    type: object
+    title: Resumption Query
+    properties:
+      data:
+        $ref: '#/definitions/Resumption'
+    x-stoplight:
+      id: bk0ffjndis19u
+  Resumption:
+    $ref: '#/definitions/Operation_Resumption'
+    x-stoplight:
+      id: f94872xs9gw71
+  Operation_Resumption:
+    type: object
+    title: Operation_Resumption
+    properties:
+      targetPayloads:
+        type: array
+        items:
+          $ref: '#/definitions/Payment_Transport_Payload_redirection_'
+      sourcePayloads:
+        type: array
+        items:
+          $ref: '#/definitions/Payment_Transport_Payload_redirection_'
+    x-stoplight:
+      id: iwqfutqyvnu5d
+  Payment_Transport_Payload_redirection_:
+    type: object
+    title: Payment Transport Payload (redirection)
+    description: |
+      TransportPayload used to convey either redirection or callback information payload.
+      See as an example of representation what would be equivalent to:
+      > POST payment.action/token888 HTTP/1.1
+      > Host: www.paymentsystem:443
+      > Content-type: application/x-form-urlencoded; charset=utf-8
+      > 
+      > key1=valA&key2=valB
+
+      HTTP <=> API transportPayload:
+      > [{
+      >   "href": "https://www.paymentsystem.com/payment.action/token888",
+      >   "method": "POST",
+      >   "formPayload": [{"name": "key1", "value": "valA"}, {"name": "key2", "value": "valB"}]
+      > }]
+    properties:
+      href:
+        type: string
+        description: Direct link of the item.
+        format: uri
+      method:
+        type: string
+        description: Method of the item.
+      formPayload:
+        type: array
+        title: Form Payload
+        items:
+          $ref: '#/definitions/Payment_Form_Payload'
+      links:
+        type: array
+        title: links
+        items:
+          $ref: '#/definitions/Payment_Link_Option'
+    x-stoplight:
+      id: zsn6l4va1hiy7
+  Payment_Form_Payload:
+    type: object
+    title: Payment Form Payload
+    description: HTML-style form parameter _name_ and potential _value_.
+    properties:
+      value:
+        type: string
+        description: Value of the form item
+      name:
+        type: string
+        description: Name of the form item
+    x-stoplight:
+      id: a1rhbgmfy68fd
+  Payment_Link_Option:
+    type: object
+    title: Payment Link Option
+    properties:
+      href:
+        type: string
+        description: Absolute or relative URL.
+        format: uri
+      rel:
+        type: string
+        description: |
+          Relation of the link (eg. parent, resumption, FAQ). In addition to [IANA standard relations](https://www.iana.org/assignments/link-relations/link-relations.xhtml), payment area bears domain specific ones:
+          - \"default-callback\" to indicate the landing page by default,
+          - \"keep-alive\" to indicate a potential webhook in case the 3rd party offers such mechanism, by default,
+          - \"resumption\" to indicate where the API consumer is expected to resume the flow after redirection.
+    x-stoplight:
+      id: sen3jku3dx1fz
+  InstrumentOrderPayload:
+    type: object
+    title: Instrument Order Payload
+    properties:
+      data:
+        $ref: '#/definitions/InstrumentOrder'
+    x-stoplight:
+      id: mr9mi730wy90x
+  InstrumentOrder:
+    $ref: '#/definitions/Operation_Instrument_Order'
+    x-stoplight:
+      id: 7o2h9kc13nhzw
+  Operation_Instrument_Order:
+    title: Operation Instrument Order
+    allOf:
+      - $ref: '#/definitions/Operation'
+      - type: object
+        properties:
+          amount:
+            $ref: '#/definitions/Operation_Amount'
+          virtualCard:
+            $ref: '#/definitions/payment_VirtualCard'
+          paymentMerchantReference:
+            type: string
+            description: "Operation merchant reference.\r\n\r\nIdentifier of the operation generated by the merchant."
+    x-stoplight:
+      id: 2w68ofyfe9lu0
+  Operation:
+    type: object
+    title: Operation
+    description: 'An *Operation* is either a payment operation implying or not a direct move of funds between a payer and a payee, or an operation related to a payment instrument (an instrument order or an instrument validation). An *Operation* is therefore an abstract resource that may be one of the following: *Authorization*, *Reversal*, *Capture*, *Refund*, *Instrument Order* and *Instrument Verification*.'
+    properties:
+      id:
+        type: string
+        description: |-
+          Amadeus Operation identifier.
+          This identifier is generated by Amadeus Payment Platform and uniquely represents this operation.
+      parentOperationId:
+        type: string
+        description: Identifier of a previous operation belonging to the same payment.
+      externalId:
+        type: string
+        description: Identifier of the operation generated by the service host.
+      method:
+        type: string
+        description: |-
+          "CARD", "AMOP" (alternative method of payment). It drives information requested at authorization time.
+          - If CARD, then card information is provided if the operation is payment related.
+          - If AMOP, then instrument paymentSystem is provided.
+      purposeOfOperation:
+        $ref: '#/definitions/Operation_Purpose_of_Payment_Operation'
+      pointOfInteraction:
+        $ref: '#/definitions/Operation_Point_Of_Interaction'
+      status:
+        type: string
+        description: Operation status.
+      timestamp:
+        type: string
+        description: Datetime of the operation.
+        format: date-time
+      operationContext:
+        $ref: '#/definitions/Operation_Context'
+    x-stoplight:
+      id: 5h23l1iyn5nhn
+  Operation_Purpose_of_Payment_Operation:
+    type: object
+    title: Operation Purpose of Payment Operation
+    description: 'Purpose of the payment operation (sales, donation,...)'
+    properties:
+      sales:
+        type: array
+        items:
+          $ref: '#/definitions/Operation_Sales'
+    x-stoplight:
+      id: m7fxekttvkypi
+  Operation_Sales:
+    type: object
+    title: Operation Sales
+    description: 'Sales summary information, should itemized information be also necessary, then this level of detail will be transported by composition of SalesSummaryItem instances.'
+    properties:
+      reference:
+        type: string
+        description: Reference identifying the sales.
+      referenceType:
+        type: string
+        description: Type of reference identifying the sales.
+      referenceOwner:
+        type: string
+        description: Owner of the reference type.
+      salesItems:
+        type: array
+        description: Sales items information.
+        items:
+          $ref: '#/definitions/Operation_Sales_Item'
+    x-stoplight:
+      id: 0cz2yalmgm3wq
+  Operation_Sales_Item:
+    type: object
+    title: Operation Sales Item
+    description: 'Sales summary itemized information, usually as a collection of children of a SalesSummary instance.'
+    properties:
+      lodgingSalesDetails:
+        $ref: '#/definitions/Operation_Sales_Item_Lodging_Details'
+      category:
+        enum:
+          - LODGING
+          - FLIGHT
+        description: Category best qualifying the sales item.
+      flightSalesDetails:
+        $ref: '#/definitions/Operation_Sales_Item_Flight_Details'
+    x-stoplight:
+      id: zogia2ufsig2u
+  Operation_Sales_Item_Lodging_Details:
+    type: object
+    title: Operation Sales Item Lodging Details
+    description: Lodging detailed item description as a sales summary item.
+    properties:
+      reservationNumber:
+        type: string
+        description: 'Reservation number of the stay, usually assigned at booking time.'
+      folioNumber:
+        type: string
+        description: 'Unique reference tracking guest charges in the property system, usually assigned at check-in time.'
+      checkin:
+        type: object
+        description: Scheduled check-in date and time of the stay.
+        properties:
+          localDateTime:
+            type: string
+            description: local date and time compliant with ISO8601.
+      checkout:
+        type: object
+        description: Scheduled check-in date and time of the stay.
+        properties:
+          localDateTime:
+            type: string
+            description: local date and time compliant with ISO8601.
+    x-stoplight:
+      id: ahl4bxo0zuu8n
+  Operation_Sales_Item_Flight_Details:
+    type: object
+    title: Operation Sales Item Flight Details
+    description: Flight detailed item description as a sales summary item.
+    properties:
+      flightLegs:
+        type: array
+        items:
+          $ref: '#/definitions/Operation_Sales_Item_Flight_Leg_Details'
+      issuingCarrierCode:
+        type: string
+        description: IATA code of the validating carrier.
+      travelAgencyCode:
+        type: string
+        description: Code identifying the travel agency resposible for this sales..
+      travelAgencyName:
+        type: string
+        description: Name of the travel agency resposible for this sales.
+      issuedDate:
+        type: string
+        description: Date of issuance of the ticket.
+        format: date
+      reservationSystem:
+        type: string
+        description: Reservation System.
+      passenger:
+        type: object
+        description: Passenger of the flight.
+        properties:
+          name:
+            type: object
+            description: Description of the name of a physical person
+            properties:
+              firstName:
+                type: string
+                description: First name.
+              lastName:
+                type: string
+                description: Last name.
+          flightPassengerType:
+            enum:
+              - ADULT
+              - CHILD
+              - INFANT
+              - INFANT_WITH_SEAT
+            description: Specifies flight passenger type
+            x-examples:
+              - ADULT
+      ticketNumber:
+        type: string
+        description: Ticket number of the flight.
+      reservationNumber:
+        type: string
+        description: 'Reservation number of the flight, usually assigned at booking time.'
+    x-stoplight:
+      id: pmszj6i79554e
+  Operation_Sales_Item_Flight_Leg_Details:
+    type: object
+    title: Operation Sales Item Flight Leg Details
+    description: Flight itinerary details associated to a given passenger as sales summary flight details at flight segment level.
+    properties:
+      fareBasisCode:
+        type: string
+        description: Airline fare basis code identifying a fare type.
+      localArrivalTime:
+        type: string
+        description: 'Local date and time of the scheduled arrival, compliant with ISO8601.'
+        format: date-time
+      arrivalTime:
+        type: string
+        description: 'UTC date and time of the scheduled arrival, compliant with ISO8601.'
+        format: date-time
+      arrivalAirportCode:
+        type: string
+        description: IATA 3-letter code representing the airport of arrival of that flight leg.
+      localDepartureTime:
+        type: string
+        description: 'Local date and time of the scheduled departure, compliant with ISO8601.'
+        format: date-time
+      departureTime:
+        type: string
+        description: 'UTC date and time of the scheduled departure, compliant with ISO8601.'
+        format: date-time
+      departureAirportCode:
+        type: string
+        description: IATA 3-letter code representing the airport of departure of that flight leg.
+      carrierCode:
+        type: string
+        description: IATA code of the carrier in charge of that flight segment.
+      travelDate:
+        type: string
+        description: Day when travel over that segment begins.
+        format: date
+      couponNumber:
+        type: string
+        description: Coupon number.
+      flightNumber:
+        type: string
+        description: Flight number associated to the carrier in charge of that flight segment.
+      serviceClass:
+        type: string
+        description: Reference identifying the class of travel and included services (with their conditions and benefits) sold.
+    x-stoplight:
+      id: gr2chaxgg94i0
+  Operation_Point_Of_Interaction:
+    type: object
+    title: Operation Point Of Interaction
+    description: Characteristics and environmental information of a conceptually and individually identifiable point of business interaction leading to some operations.
+    properties:
+      participatingPaymentTerminal:
+        $ref: '#/definitions/Operation_Payment_Terminal'
+      operatingEnvironment:
+        $ref: '#/definitions/Operation_Operating_Environment'
+      location:
+        $ref: '#/definitions/Operation_Location'
+      referenceOwner:
+        type: string
+        description: Owner/Issuer of the type of reference used to reference this point of business interaction.
+      referenceType:
+        type: string
+        description: Type of reference used to reference this point of business interaction.
+      reference:
+        type: string
+        description: Reference of the point of business interaction.
+    x-stoplight:
+      id: gr0atmfxz82m0
+  Operation_Payment_Terminal:
+    type: object
+    title: Operation Payment Terminal
+    description: 'Payment terminal (also known as POS Terminal, PDQ terminal, card terminal), device interfacing with payment cards to provide a set of different financial services (for instance make electronic funds transfers).'
+    properties:
+      deviceReference:
+        type: string
+        description: Reference identifying the payment terminal.
+    x-stoplight:
+      id: te1a77oym46nu
+  Operation_Operating_Environment:
+    type: object
+    title: Operation Operating Environment
+    description: Operating Environment of a given Point of Interaction.
+    properties:
+      deliveryTypesOfGoods:
+        type: array
+        enum:
+          - DIGITAL_GOODS
+          - PHYSICAL_GOODS
+          - SERVICES
+        description: Types of goods delivered through this Point of Business.
+        items:
+          type: string
+      cardPresence:
+        enum:
+          - CARD_NOT_PRESENT
+          - CARD_PRESENT
+          - NO_CONTACT
+        description: Qualification of the Point of Business as *Card Present* or *Card Not Present* environment.
+      holderInteractionMode:
+        enum:
+          - ECOMMERCE
+          - FACE_TO_FACE
+          - MAIL_ORDER
+          - HOLDER_NOT_PRESENT
+          - PHONE_ORDER
+          - RECURRING
+          - ON_FILE
+        description: Primary mode of interaction with the payment instrument holder that this Point of Business provides.
+      hasOnlineCapacity:
+        type: boolean
+        description: Indicator of the capacity of the Point Of Business to use the network connectivity to synchronously communicate with the processor.
+      hasOfflineCapacity:
+        type: boolean
+        description: Indicator of the capacity of the Point Of Business to operate autonomously without a direct connectivity with the processor.
+      vicinity:
+        enum:
+          - ON_PREMISES
+          - OFF_PREMISES
+          - NO_TERMINAL
+        description: Positioning information with regards to potential premises of the Point of Business.
+      supervisedBy:
+        enum:
+          - FINANCIAL
+          - HOLDER
+          - MERCHANT
+        description: 'Information about which category of stakeholder is accountable, supervising the Point of Business.'
+      isAttended:
+        type: boolean
+        description: Indicator of whether the Point of Business is or not attended.
+    x-stoplight:
+      id: jcnzehukwq3zr
+  Operation_Location:
+    type: object
+    title: Operation Location
+    description: Description of a particular point or place in physical space
+    properties:
+      address:
+        $ref: '#/definitions/Operation_Address'
+      subtype:
+        type: string
+        description: 'Location sub-type (e.g. market, division, airport, port, rail-station, restaurant, atm...)'
+      name:
+        type: string
+        description: 'Label associated to the location (e.g. Eiffel Tower, Madison Square)'
+        x-examples:
+          - Eiffel Tower
+    x-stoplight:
+      id: gqtwpnsbmpr3l
+  Operation_Address:
+    type: object
+    title: Operation Address
+    description: Address information
+    properties:
+      countryCode:
+        type: string
+        description: ISO 3166-1 country code
+        pattern: '[a-zA-Z]{2}'
+      lines:
+        type: array
+        description: 'Line 1 = Street address, Line 2 = Apartment, suite, unit, building, floor, etc'
+        items:
+          type: string
+      postalCode:
+        type: string
+        description: 'Example: 74130'
+      stateCode:
+        type: string
+        description: State code (two character standard IATA state code)
+        pattern: '[a-zA-Z0-9]{1,2}'
+      state:
+        type: string
+        description: 'State, province or country name'
+        x-examples:
+          - Florida
+    x-stoplight:
+      id: qwfunepzg9xf5
+  Operation_Context:
+    type: object
+    title: Operation Context
+    properties:
+      callbackUniqueToken:
+        type: string
+        description: 'Token of information allowing the API consumer to uniquely identify the context of that payment record, for maintenance or reference purpose. Some API consumers would put some session token for instance.'
+      links:
+        type: array
+        items:
+          $ref: '#/definitions/Operation_Link'
+      threeDomainSecure:
+        $ref: '#/definitions/Operation_Three_Domain_Secure'
+      termsAndConditions:
+        $ref: '#/definitions/Operation_Terms_And_Conditions'
+      interactionCondition:
+        type: string
+        description: |
+          Main condition qualifying the interaction mechanism of the transaction.
+          Here are the different interactions supported at the moment:
+          - \"ACCOUNT_VERIFICATION\",
+          - \"COMMIT_PREAUTHOR\" (commitment of a preauthorization),
+          - \"ECOMMERCE\",
+          - \"FACE_TO_FACE_PIN\",
+          - \"FACE_TO_FACE_MANUAL\",
+          - \"IN_FLIGHT\",
+          - \"INQUIRY\",
+          - \"OTHER_NOT_PRESENT\" (other Card Not Present interaction),
+          - \"ON_FILE\",
+          - \"PAPER_ORDER\",
+          - \"PHONE_ORDER\",
+          - \"PREAUTHORIZATION\" (preauthorizing still allows amount to vary),
+          - \"RECURRING\",
+          - \"MERCHANT_SUSPICIOUS\",
+          - \"TIME_BASED\".
+      transactionIntent:
+        type: string
+        description: |
+          Provide the original intent of the (future) transaction(s). 
+          It is strongly recommended to communicate that intent of use for Merchant-initiated transactions, and even a mandate under some local regulations. Here are the different intents supported at the moment:
+          - \"NO_PAYMENT\" (like account verification or inquiries),
+          - \"PRE_PAYMENT_ONLY\" (implicitly meaning there is some remainder of payment to cover via some completion later on, e.g. a 10% downpayment),
+          - \"ONE_OFF\" (default),
+          - \"DEFERRED\" (due to some business rationales),
+          - \"NO_SHOW_PENALTY\",
+          - \"CANCELLATION_PENALTY\",
+          - \"LATE_CHANGE_PENALTY\",
+          - \"DEPOSIT_RETAINER_PENALTY\",
+          - \"ANY_PENALTY\",
+          - \"COMPLETION\" (of a pre-payment done earlier),
+          - \"EXTENDED_PERIOD_DELAY\" (due to some specific business cases),
+          - \"TECHNICAL_RESUBMISSION\",
+          - \"INSTALLMENTS\" (with terms and plans agreed in advance),
+          - \"SUBSCRIPTION\" (of fixed amount through regular schedule),
+          - \"RECURRING\" (of variable amounts through regular schedule, e.g. utilities payment),
+          - \"REUSABLE\" (at any time, of any amount, within payment instrument holder scope of consent of course).
+      transactionInitiator:
+        enum:
+          - MERCHANT
+          - HOLDER
+        description: Indicate whether the transaction is a MERCHANT initiated transaction (_MIT_) or a payment instrument HOLDER initiated transaction (aka _CIT_ with _C_ standing for cardholder or consumer).
+        default: HOLDER
+      acquirerInformation:
+        $ref: '#/definitions/Operation_AcquirerInformation'
+      merchantAccount:
+        $ref: '#/definitions/Operation_MerchantAccount'
+      device:
+        $ref: '#/definitions/Operation_HostingDevice'
+    x-stoplight:
+      id: rssy3a3gh1z6o
+  Operation_Link:
+    type: object
+    title: Operation Link
+    properties:
+      rel:
+        type: string
+        description: |
+          Relation of the link (eg. parent, resumption, FAQ). In addition to [IANA standard relations](https://www.iana.org/assignments/link-relations/link-relations.xhtml), payment area bears domain specific ones:
+          - \"default-callback\" to indicate the landing page by default,
+          - \"webhook\" to indicate a potential webhook in case the 3rd party offers such mechanism, by default,
+          - \"resumption\" to indicate where the API consumer is expected to resume the flow after redirection.
+      href:
+        type: string
+        description: Absolute or relative URL.
+        format: uri
+    x-stoplight:
+      id: uvr1r5lnwdqm6
+  Operation_Three_Domain_Secure:
+    type: object
+    title: Operation Three Domain Secure
+    description: Operation 3-Domain Secure information.
+    properties:
+      collectionIndicator:
+        type: string
+        description: UCAF collection indicator value.
+      cavvAlgorithm:
+        type: string
+        description: 'CAVV Algorithm, required for some schemes.'
+      aav:
+        type: string
+        description: UCAF Accountholder Authentication Value.
+      aevv:
+        type: string
+        description: Base64-encoded American Express Verification Value.
+      cavv:
+        type: string
+        description: Base64-encoded Cardholder Authentication Verification Value.
+      eci:
+        type: string
+        description: Computed e-commerce indicator.
+      transStatus:
+        type: string
+        description: 3-D Secure 2.x (or later) Final Authentication Result.
+      paresStatus:
+        type: string
+        description: 3-D Secure 1.x Payer Authentication RESponse 1-character status.
+      veresStatus:
+        type: string
+        description: 3-D Secure 1.x Verify Enrollment RESponse 1-character status.
+      xid:
+        type: string
+        description: Base64-encoded 3-D Secure transaction identifier.
+      dsTransactionId:
+        type: string
+        description: 3-D Secure 2.x (or later) Directory Server Transaction Identifier.
+        format: uuid
+      version:
+        type: string
+        description: 3-D Secure protocol version.
+    x-stoplight:
+      id: 0f4vn170gq49f
+  Operation_Terms_And_Conditions:
+    type: object
+    title: Operation Terms And Conditions
+    properties:
+      credentialsOnFile:
+        $ref: '#/definitions/Record_Credentials_On_File'
+      installments:
+        $ref: '#/definitions/Operation_InstallmentDetails'
+      currencyConversion:
+        type: string
+    x-stoplight:
+      id: 6upg50z4q1rz7
+  Record_Credentials_On_File:
+    type: object
+    title: Record Credentials On File
+    properties:
+      instrumentFilingRequest:
+        enum:
+          - STORING
+          - REUSE
+        description: Indicate whether the transaction is the one where the credential are being stored for the first time or it is a subsequent follow up transaction that is performed using stored credentials.
+      reuseProof:
+        type: object
+        properties:
+          traceReference:
+            type: string
+            description: A reference of the trace of the consent for filing or original filing successful transaction.
+    x-stoplight:
+      id: 5scc515sowu2g
+  Operation_InstallmentDetails:
+    type: object
+    title: Operation_InstallmentDetails
+    properties:
+      maxNumber:
+        type: integer
+      period:
+        $ref: '#/definitions/Operation_Period'
+      firstInstallmentAmount:
+        $ref: '#/definitions/Operation_Amount'
+      subsequentInstallmentAmount:
+        $ref: '#/definitions/Operation_Amount'
+      interestAmount:
+        $ref: '#/definitions/Operation_Amount'
+    x-stoplight:
+      id: 6pwvmwlrvy037
+  Operation_Period:
+    type: object
+    title: Operation Period
+    description: |
+      Models a period of time between two dates and inclusive only of the days of the week specified; for instance using the example: 
+      Mondays, Tuesdays, Saturdays and Sundays between 22nd Nov 2019 and 26th Dec 2019 are included
+      Some parts of the period can excluded.
+    properties:
+      frequencyType:
+        enum:
+          - DAILY
+          - MONTHLY
+          - WEEKLY
+        description: Frequency type
+    minProperties: 1
+    x-examples:
+      Example:
+        frequencyType: MONTHLY
+    x-tags:
+      - HotelIT
+      - Hospitality
+      - Period
+    x-stoplight:
+      id: fw3afm7jpsx71
+  Operation_Amount:
+    type: object
+    title: Operation Amount
+    description: Operation amount
+    properties:
+      value:
+        type: string
+        description: The value of the amount.
+      currencyCode:
+        type: string
+        description: 'Indicate the currency of the provided amount (following [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217)).'
+        minLength: 3
+        maxLength: 3
+    x-stoplight:
+      id: v2rve142n1z8h
+  Operation_AcquirerInformation:
+    type: object
+    title: Operation_AcquirerInformation
+    description: Information related to the acquirer of a payment operation.
+    properties:
+      acquirerBin:
+        type: string
+        description: Acquirer Bank Identifier Number.
+      acquirerCountry:
+        type: string
+        description: ISO 3166-1 country code of the acquirer.
+        pattern: '[a-zA-Z]{2}'
+    x-stoplight:
+      id: z8yl00781ohf0
+  Operation_MerchantAccount:
+    type: object
+    title: Operation_MerchantAccount
+    description: Information related to the merchant of a payment operation.
+    properties:
+      name:
+        type: string
+        description: Name identifiying the merchant in the service host system.
+      login:
+        type: string
+        description: Login of a user registered in the service host system and belonging to the merchant.
+      password:
+        $ref: '#/definitions/Payment_Document_Envelope'
+    x-stoplight:
+      id: rgy6skhujwt3u
+  Payment_Document_Envelope:
+    $ref: 'https://stoplight.cloud.rnd.amadeus.net/api/nodes.raw/?srn=bbs/adt-sl/data-model-dictionary/reference/common/models/SharedCommonDataModels/DocumentEnvelope/DocumentEnvelope.v1.yaml&mid=3022&deref=bundle'
+    title: Payment Document Envelope
+    x-stoplight:
+      id: 3bnb3wk4u0lo0
+  Operation_HostingDevice:
+    type: object
+    title: Operation_HostingDevice
+    properties:
+      id:
+        type: string
+      activeWebBrowser:
+        $ref: 'https://stoplight.cloud.rnd.amadeus.net/api/nodes.raw/?srn=bbs/adt-sl/data-model-dictionary/reference/common/models/SharedCommonDataModels/WebBrowser/WebBrowser.v1.yaml&mid=5304&deref=bundle'
+    x-stoplight:
+      id: 85qorl56pex2b
+  payment_VirtualCard:
+    type: object
+    title: payment_VirtualCard
+    properties:
+      vendorCode:
+        type: string
+      cardNumber:
+        type: string
+      cvv:
+        type: string
+      expiryDate:
+        type: string
+      holderName:
+        type: string
+      holder:
+        $ref: '#/definitions/Payment_Instrument_Holder'
+      limitations:
+        type: object
+        properties:
+          numberOfPurchases:
+            type: integer
+          allowedCurrencies:
+            type: array
+            items:
+              type: string
+          beginDate:
+            type: string
+          endDate:
+            type: string
+      availableBalance:
+        type: object
+        properties:
+          value:
+            type: string
+          currencyCode:
+            type: string
+      eci:
+        type: string
+        description: The electronic commerce indicator is used in payer authentication to indicate the level of security used when the cardholder provided payment information to the merchant
+      cryptogram:
+        type: string
+        description: cryptogram is used to secure cardholder data every time a transaction is made.
+    x-stoplight:
+      id: sofjc7xy1nb7z
+  Payment_Instrument_Holder:
+    type: object
+    title: Payment Instrument Holder
+    description: Describe the holder of the payment instrument.
+    properties:
+      language:
+        type: string
+        description: 'Indicate the payment-instrument holder''s language, lower case alpha-2 code is expected (following [ISO 639](https://en.wikipedia.org/wiki/ISO_639), eg. "en" for English).'
+      email:
+        type: string
+        description: 'Indicate the payment-instrument holder''s email address ([RFC 5322](https://tools.ietf.org/html/rfc5322)), please note that length beyond 70 characters and internationalization are not yet supported ([RFC 6530](https://tools.ietf.org/html/rfc6530)).'
+      billingAddress:
+        type: object
+        title: billingAddress
+        description: 'Indicate the payment-instrument holder''s postal address, please standardize your input following recommendation from [UPU](http://www.upu.int) international interoperability standard (for instance, try to stick to non accented roman upper case characters, use standard abbreviations,...).'
+        properties:
+          countryCode:
+            type: string
+            description: 'Indicate the payment-instrument holder''s country, upper case alpha-2 code is expected (following [ISO 3166](https://en.wikipedia.org/wiki/ISO_3166), eg. "AD" for Andorra).'
+            minLength: 2
+            maxLength: 2
+          cityName:
+            type: string
+            description: 'Indicate the payment-instrument holder''s city name, up to 35 characters.'
+          postalCode:
+            type: string
+            description: 'Indicate the payment-instrument holder''s postal code, up to 10 characters.'
+      contacts:
+        type: array
+        title: Contact
+        description: 'A contact refers to the information that can be used to reach a person, a company or an organization.'
+        items:
+          type: object
+          title: Contact
+          description: 'A contact refers to the information that can be used to reach a person, a company or an organization.'
+          properties:
+            phone:
+              type: object
+              title: Phone
+              description: Phone information.
+              properties:
+                text:
+                  type: string
+                  description: String containing the full phone number - applicable only when a structured phone (i.e. countryCallingCode + number) is not provided
+                  x-examples:
+                    - (+33)6123123
+                  x-risk-personal-data-field: PHONE_NUMBER
+              x-tags:
+                - phone
+                - contact
+                - address
+                - PII
+          x-tags:
+            - contact
+            - phone
+            - email
+            - address
+            - message
+            - PII
+      name:
+        type: object
+        title: name
+        properties:
+          lastName:
+            type: string
+          firstName:
+            type: string
+    x-stoplight:
+      id: rmavzcctmoen1
+  InstrumentOrderResponse:
+    type: object
+    title: Instrument Order Response
+    properties:
+      data:
+        type: object
+        allOf:
+          - $ref: '#/definitions/InstrumentOrder'
+          - $ref: '#/definitions/Resumption'
+    x-stoplight:
+      id: kdtsp9jbfrgtm
+  ErrorResponse:
+    type: object
+    title: Error Response
+    properties:
+      errors:
+        type: array
+        items:
+          $ref: '#/definitions/Error'
+    x-stoplight:
+      id: zsko00s3f4y5c
+  Error:
+    $ref: '#/definitions/Operation_Error.v1'
+    x-stoplight:
+      id: rlulh4jgdsa20
+  Operation_Error.v1:
+    $ref: 'https://stoplight.cloud.rnd.amadeus.net/api/nodes.raw/?srn=bbs/adt-sl/data-model-dictionary/reference/common/models/SharedCommonDataModels/Error/Error.v1.yaml&mid=4546&deref=bundle'
+    x-stoplight:
+      id: hkajfj6te1g7l
+  RefundPayload:
+    type: object
+    title: Refund Payload
+    properties:
+      data:
+        $ref: '#/definitions/Refund'
+    x-stoplight:
+      id: 9asao4ebg7iig
+  Refund:
+    $ref: '#/definitions/Operation_Refund'
+    x-stoplight:
+      id: rhbs6j73mfbdg
+  Operation_Refund:
+    title: Operation Refund
+    allOf:
+      - $ref: '#/definitions/Operation'
+      - type: object
+        properties:
+          amount:
+            $ref: '#/definitions/Operation_Amount'
+          instrument:
+            $ref: '#/definitions/Payment_Instrument'
+          card:
+            $ref: '#/definitions/Card'
+          bankAccount:
+            $ref: '#/definitions/BankAccount'
+          paymentMerchantReference:
+            type: string
+            description: |-
+              Operation merchant reference.
+
+              Identifier of the operation generated by the merchant.
+          pspReconciliationReference:
+            type: string
+            description: Authorization PSP reference provided for reconciliation purpose (also identified as _PRR_ in other Amadeus payment applications). This reference is generated by the payee in order to reconciliate the payment settlement against the sales.
+    x-stoplight:
+      id: 2biwmf5ev5ogj
+  Payment_Instrument:
+    type: object
+    title: Payment Instrument
+    description: 'The payment instrument is usually operated by its holder in order to pay. In some cases, please note that such use may be delegated to another payer. Therefore there could be some cases where the registered instrument holder differs from the payer.'
+    properties:
+      paymentSystem:
+        type: string
+        description: |
+          NOT FOR METHOD CARD - Upper case key representing the supported payment system chosen by the payer from a predetermined list:
+          - \"[ALIPAY](https://intl.alipay.com)\",
+          - \"[CIMBCLICKS](https://www.cimbclicks.com.my)\",
+          - \"[EPS](https://www.eps-ueberweisung.at)\",
+          - \"[GIROPAY](https://www.giropay.de)\",
+          - \"[IDEAL](https://www.ideal.nl)\",
+          - \"[KLARNA](https://www.klarna.com)\",
+          - \"[KNET](https://www.knetpay.com.kw)\",
+          - \"[MAYBANK2U](https://www.maybank2u.com.my)\",
+          - \"[PAYPAL](https://www.paypal.com)\",
+          - \"[POLI](https://www.polipayments.com)\",
+          - \"[QIWI](https://qiwi.com)\",
+          - \"[SAFETYPAY](https://www.safetypay.com)\",
+          - \"[SEPA](https://ec.europa.eu/info/business-economy-euro/banking-and-finance/consumer-finance-and-payments/payment-services/single-euro-payments-area-sepa_en)\",
+          - \"[SOFORT](https://www.sofort.de)\",
+          - \"[UNIONPAY](https://www.unionpayintl.com)\",
+          - \"[VNPAY](https://vnpay.vn/)\",
+          - \"[SHOPEEPAY](https://shopeepay.vn/)\",
+          - \"[VIETQR](https://vietqr.vn/)\".
+
+          Prerequisite is that this payment method is already contractually made available on behalf of the payee. For a more complete list of payment systems, please liaise with your Business Contact.
+      holder:
+        $ref: '#/definitions/Payment_Instrument_Holder'
+    x-stoplight:
+      id: 12api17hd06na
+  Card:
+    type: object
+    title: Card
+    description: The payment card is a particular payment instrument.
+    properties:
+      vendorCode:
+        type: string
+        description: |
+          Upper case key representing the brand of the payment card chosen by the payer to process that payment transaction out of that non-exhaustive list:
+          - "VI" for Visa® (usually card starting with 4xxx),
+          - "CA" for Mastercard® (usually card starting with 5xxx, 6xxx or 2xxx),
+          - "AX" for American Express® (usually card starting with 34xxx or 37xxx),
+          - "DC" or "DS" for Diners Club®/Discover® (usually card starting with 64xxx or 65xxx),
+          - "JC" for JCB® (Japan Credit Bureau) (usually card starting with 35xxx),
+          - "UP" for UnionPay® (usually car starting with 62xxx),
+          - "TP" for UATP® (usually card starting with 1xxx)...
+          Prerequisite is of course that this brand is already contractually made available on behalf of the payee. For a more complete list of card brands (Aura®, CB®, elo®, Hipercard®, Maestro®, mada®...), please liaise with your Business Contact.
+        minLength: 2
+        maxLength: 2
+      holderName:
+        type: string
+        description: Card holder fullname registered against that payment card.
+      expiryDate:
+        type: string
+        description: 'Card expiry date, when present, displayed on the front of the payment card. Format expected is *YYYY-MM*.'
+        pattern: '20[0-9]{2}-(0[1-9]|10|11|12)'
+        minLength: 7
+        maxLength: 7
+      cvv:
+        type: string
+        description: 'Card Verification Value, also known as [card security code](https://en.wikipedia.org/wiki/Card_security_code), displayed (usually) on the back of the payment card. Handling of this very sensitive information must comply with [PCI-DSS](https://en.wikipedia.org/wiki/Payment_Card_Industry_Data_Security_Standard).'
+        minLength: 3
+        maxLength: 4
+      tokenizedCardNumber:
+        type: string
+        description: 'Token representing the payment card of the payer, compliant with [PCI-DSS](https://en.wikipedia.org/wiki/Payment_Card_Industry_Data_Security_Standard) scope reduction tokenization principles. This information being sensitive, as for the cardNumber field itseld, please do not expect this information to be returned by default.'
+      maskedCardNumber:
+        type: string
+        description: 'Masked payment card number, following recommandations of [PCI-DSS](https://en.wikipedia.org/wiki/Payment_Card_Industry_Data_Security_Standard). This information will usually be returned for information purpose, for instance it can be displayed or printed in some payment receipt.'
+      cardNumber:
+        type: string
+        description: 'Payment card number, also known as PAN, or [primary account number](https://en.wikipedia.org/wiki/Payment_card_number), displayed (usually) on the front of the payment card. Handling of this very sensitive information must comply with [PCI-DSS](https://en.wikipedia.org/wiki/Payment_Card_Industry_Data_Security_Standard). This information will usually not be returned as is, but masked.'
+      paymentSystem:
+        type: string
+        description: |
+          NOT FOR METHOD CARD - Upper case key representing the supported payment system chosen by the payer from a predetermined list:
+          - \"[ALIPAY](https://intl.alipay.com)\",
+          - \"[CIMBCLICKS](https://www.cimbclicks.com.my)\",
+          - \"[EPS](https://www.eps-ueberweisung.at)\",
+          - \"[GIROPAY](https://www.giropay.de)\",
+          - \"[IDEAL](https://www.ideal.nl)\",
+          - \"[KLARNA](https://www.klarna.com)\",
+          - \"[KNET](https://www.knetpay.com.kw)\",
+          - \"[MAYBANK2U](https://www.maybank2u.com.my)\",
+          - \"[PAYPAL](https://www.paypal.com)\",
+          - \"[POLI](https://www.polipayments.com)\",
+          - \"[QIWI](https://qiwi.com)\",
+          - \"[SAFETYPAY](https://www.safetypay.com)\",
+          - \"[SEPA](https://ec.europa.eu/info/business-economy-euro/banking-and-finance/consumer-finance-and-payments/payment-services/single-euro-payments-area-sepa_en)\",
+          - \"[SOFORT](https://www.sofort.de)\",
+          - \"[UNIONPAY](https://www.unionpayintl.com)\".
+          Prerequisite is that this payment method is already contractually made available on behalf of the payee. For a more complete list of payment systems, please liaise with your Business Contact.
+      holder:
+        $ref: '#/definitions/Payment_Instrument_Holder'
+    x-stoplight:
+      id: qlc39j5j2lb6n
+  BankAccount:
+    type: object
+    title: BankAccount
+    description: The bank account is a particular payment instrument.
+    properties:
+      bic:
+        type: string
+        description: 'SWIFT Bank Identifier Code (as per [ISO 9362]https://en.wikipedia.org/wiki/ISO_9362) of the bank account of the payer, optional in case of SEPA Credit Transfers since 2016.'
+        pattern: '^[A-Z]{6}[A-Z0-9]{2,5}'
+        minLength: 8
+        maxLength: 11
+      iban:
+        type: string
+        description: '[International Bank Account Number](https://en.wikipedia.org/wiki/International_Bank_Account_Number) of the payer as per ISO 13616.'
+        pattern: '^[A-Z]{2}[0-9]{2}[A-Z0-9]{10,30}'
+        minLength: 14
+        maxLength: 34
+      paymentSystem:
+        type: string
+        description: |
+          NOT FOR METHOD CARD - Upper case key representing the supported payment system chosen by the payer from a predetermined list:
+          - \"[ALIPAY](https://intl.alipay.com)\",
+          - \"[CIMBCLICKS](https://www.cimbclicks.com.my)\",
+          - \"[EPS](https://www.eps-ueberweisung.at)\",
+          - \"[GIROPAY](https://www.giropay.de)\",
+          - \"[IDEAL](https://www.ideal.nl)\",
+          - \"[KLARNA](https://www.klarna.com)\",
+          - \"[KNET](https://www.knetpay.com.kw)\",
+          - \"[MAYBANK2U](https://www.maybank2u.com.my)\",
+          - \"[PAYPAL](https://www.paypal.com)\",
+          - \"[POLI](https://www.polipayments.com)\",
+          - \"[QIWI](https://qiwi.com)\",
+          - \"[SAFETYPAY](https://www.safetypay.com)\",
+          - \"[SEPA](https://ec.europa.eu/info/business-economy-euro/banking-and-finance/consumer-finance-and-payments/payment-services/single-euro-payments-area-sepa_en)\",
+          - \"[SOFORT](https://www.sofort.de)\",
+          - \"[UNIONPAY](https://www.unionpayintl.com)\".
+          Prerequisite is that this payment method is already contractually made available on behalf of the payee. For a more complete list of payment systems, please liaise with your Business Contact.
+      holder:
+        $ref: '#/definitions/Payment_Instrument_Holder'
+    x-stoplight:
+      id: g6z70h576ards
+  CapturePayload:
+    type: object
+    title: Capture Payload
+    properties:
+      data:
+        $ref: '#/definitions/Capture'
+    x-stoplight:
+      id: aqm81hs48y6pj
+  Capture:
+    $ref: '#/definitions/Operation_Capture'
+    x-stoplight:
+      id: x42ldkkoks6qs
+  Operation_Capture:
+    title: Operation Capture
+    allOf:
+      - $ref: '#/definitions/Operation'
+      - type: object
+        properties:
+          amount:
+            $ref: '#/definitions/Operation_Amount'
+          instrument:
+            $ref: '#/definitions/Payment_Instrument'
+          card:
+            $ref: '#/definitions/Card'
+          bankAccount:
+            $ref: '#/definitions/BankAccount'
+          paymentMerchantReference:
+            type: string
+            description: |-
+              Operation merchant reference.
+
+              Identifier of the operation generated by the merchant.
+          approvalCode:
+            type: string
+            description: Authorization approval code acting as primary proof of availability of funds that can be used by the payee in order to request a capture of those funds to their bank.
+            minLength: 6
+            maxLength: 8
+          pspReconciliationReference:
+            type: string
+            description: Authorization PSP reference provided for reconciliation purpose (also identified as _PRR_ in other Amadeus payment applications). This reference is generated by the payee in order to reconciliate the payment settlement against the sales.
+    x-stoplight:
+      id: 0rwih1mfj4u9l
+  ReversalPayload:
+    type: object
+    title: Reversal Payload
+    properties:
+      data:
+        $ref: '#/definitions/Reversal'
+    x-examples:
+      - data:
+          parentOperationId: '{authorization-id}'
+          id: '{reversal-id}'
+          amount:
+            value: '123.45'
+            currencyCode: EUR
+          method: CARD
+          card:
+            vendorCode: VI
+            cardNumber: '4000000000000001'
+            expiryDate: 2024-12
+          approvalCode: '12345678'
+          operationContext:
+            merchantAccount:
+              name: '{merchant-account}'
+            acquirerInformation:
+              acquirerBin: '{acquirer-bin}'
+    x-stoplight:
+      id: gwvjt4h5611so
+  Reversal:
+    $ref: '#/definitions/Operation_Reversal'
+    x-stoplight:
+      id: ny9d9uzfy9ypw
+  Operation_Reversal:
+    title: Operation_Reversal
+    allOf:
+      - $ref: '#/definitions/Operation'
+      - type: object
+        properties:
+          amount:
+            $ref: '#/definitions/Operation_Amount'
+          approvalCode:
+            type: string
+            description: Authorization approval code acting as primary proof of availability of funds that can be used by the payee in order to request a capture of those funds to their bank.
+            minLength: 6
+            maxLength: 8
+          paymentMerchantReference:
+            type: string
+            description: |-
+              Operation merchant reference.
+
+              Identifier of the operation generated by the merchant.
+          instrument:
+            $ref: '#/definitions/Payment_Instrument'
+          card:
+            $ref: '#/definitions/Card'
+          bankAccount:
+            $ref: '#/definitions/BankAccount'
+          pspReconciliationReference:
+            type: string
+            description: Authorization PSP reference provided for reconciliation purpose (also identified as _PRR_ in other Amadeus payment applications). This reference is generated by the payee in order to reconciliate the payment settlement against the sales.
+    x-stoplight:
+      id: 2zqibr45nufs7
+  AuthorizationPayload:
+    type: object
+    title: Authorization Payload
+    properties:
+      data:
+        $ref: '#/definitions/Authorization'
+    x-examples:
+      - data:
+          id: '{authorization-id}'
+          amount:
+            value: '123.45'
+            currencyCode: EUR
+          authorizationType: AUTHORIZATION_ONLY
+          method: CARD
+          card:
+            vendorCode: VI
+            cardNumber: '4000000000000001'
+            cvv: '123'
+            expiryDate: 2024-12
+          operationContext:
+            merchantAccount:
+              name: '{merchant-account}'
+            acquirerInformation:
+              acquirerBin: '{acquirer-bin}'
+          purposeOfOperation:
+            sales:
+              - reference: NYWSMG
+                referenceType: PNR
+                salesItems:
+                  - category: FLIGHT
+                    flightSalesDetails:
+                      flightLegs:
+                        - fareBasisCode: '{fare-code}'
+                          departureAirportCode: HEL
+                          departureTime: '2023-01-24T16:50:00Z'
+                          arrivalAirportCode: MAD
+                          arrivalTime: '2023-01-24T20:15:00Z'
+                          carrierCode: DY
+                          couponNumber: '1'
+                          flightNumber: '1661'
+                          serviceClass: V
+                      passenger:
+                        name:
+                          fullName: JOHN DOE MR
+                        flightPassengerType: ADULT
+    x-stoplight:
+      id: bhg0jonppbaj2
+  Authorization:
+    $ref: '#/definitions/Operation_Authorization'
+    x-stoplight:
+      id: t2n5of9rqstqp
+  Operation_Authorization:
+    title: Operation Authorization
+    allOf:
+      - $ref: '#/definitions/Operation'
+      - type: object
+        properties:
+          amount:
+            $ref: '#/definitions/Operation_Amount'
+          instrument:
+            $ref: '#/definitions/Payment_Instrument'
+          card:
+            $ref: '#/definitions/Card'
+          bankAccount:
+            $ref: '#/definitions/BankAccount'
+          paymentMerchantReference:
+            type: string
+            description: |-
+              Operation merchant reference.
+
+              Identifier of the operation generated by the merchant.
+          approvalCode:
+            type: string
+            description: Authorization approval code acting as primary proof of availability of funds that can be used by the payee in order to request a capture of those funds to their bank.
+            minLength: 6
+            maxLength: 8
+          authorizationType:
+            enum:
+              - AUTHORIZATION_ONLY
+              - AUTHOR_AND_CAPTURE
+            description: |-
+              "AUTHORIZATION_ONLY" or "AUTHOR_AND_CAPTURE".
+              Indicates how the settlement is triggered:
+               - If AUTHORIZATION_ONLY, then the clearing of the authorization needs to be triggered via its dedicated operation, i.e. Capture.
+                - If AUTHOR_AND_CAPTURE, then the clearing and settlement is triggered automatically.
+          validFrom:
+            type: string
+            description: Beginning date of the validity of the approval code.
+            format: date
+          validUntil:
+            type: string
+            description: Ending date of the validity of the approval code.
+            format: date
+          visaDetails:
+            $ref: '#/definitions/Operation_AuthorizationVisaSpecifics'
+          mastercardDetails:
+            $ref: '#/definitions/Operation_AuthorizationMastercardSpecifics'
+          americanexpressDetails:
+            $ref: '#/definitions/Operation_AuthorizationAmexSpecifics'
+          schemeTransactionId:
+            type: string
+            description: Identifier of the payment transaction in the card scheme system.
+          pspReconciliationReference:
+            type: string
+            description: Authorization PSP reference provided for reconciliation purpose (also identified as _PRR_ in other Amadeus payment applications). This reference is generated by the payee in order to reconciliate the payment settlement against the sales.
+    x-stoplight:
+      id: ps47voy70xxfq
+  Operation_AuthorizationVisaSpecifics:
+    type: object
+    title: Operation_AuthorizationVisaSpecifics
+    properties:
+      pointOfService:
+        $ref: '#/definitions/Operation_VisaPointOfService'
+      cardSequenceNumber:
+        type: string
+        minLength: 3
+        maxLength: 3
+      responseCode:
+        type: string
+        minLength: 2
+        maxLength: 2
+      authorizationCharacteristicsIndicator:
+        type: string
+        minLength: 1
+        maxLength: 1
+    x-stoplight:
+      id: ykqqlfhinw2cn
+  Operation_VisaPointOfService:
+    type: object
+    title: Operation_VisaPointOfService
+    properties:
+      entryModeCode:
+        type: string
+        minLength: 4
+        maxLength: 4
+      conditionCode:
+        type: string
+        minLength: 2
+        maxLength: 2
+      additionalPosInformation:
+        $ref: '#/definitions/Operation_VisaAdditionalPosInfo'
+    x-stoplight:
+      id: 1mvqmlu8h5yej
+  Operation_VisaAdditionalPosInfo:
+    type: object
+    title: Operation_VisaAdditionalPosInfo
+    properties:
+      terminalType:
+        type: string
+        minLength: 1
+        maxLength: 1
+      terminalEntryCapability:
+        type: string
+        minLength: 1
+        maxLength: 1
+      chipConditionCode:
+        type: string
+        minLength: 1
+        maxLength: 1
+      specialConditionIndicator:
+        type: string
+        minLength: 1
+        maxLength: 1
+      merchantGroupIndicator:
+        type: string
+        minLength: 2
+        maxLength: 2
+      chipTransactionIndicator:
+        type: string
+        minLength: 1
+        maxLength: 1
+      chipCardReliabilityIndicator:
+        type: string
+        minLength: 1
+        maxLength: 1
+      electronicCommerceAndPaymentIndicaor:
+        type: string
+        minLength: 2
+        maxLength: 2
+      cardholderIdMethodIndicator:
+        type: string
+        minLength: 1
+        maxLength: 1
+      partialAuthorizationIndicator:
+        type: string
+        minLength: 1
+        maxLength: 1
+    x-stoplight:
+      id: 4u780oof31ua4
+  Operation_AuthorizationMastercardSpecifics:
+    type: object
+    title: Operation_AuthorizationMastercardSpecifics
+    properties:
+      pointOfService:
+        $ref: '#/definitions/Operation_MastercardPointOfService'
+      cardSequenceNumber:
+        type: string
+        minLength: 3
+        maxLength: 3
+      electronicCommerceIndicators:
+        type: string
+        minLength: 7
+        maxLength: 7
+      cardholderActivatedTerminalLevel:
+        type: string
+        minLength: 1
+        maxLength: 1
+    x-stoplight:
+      id: x8749syk9wbbv
+  Operation_MastercardPointOfService:
+    type: object
+    title: Operation_MastercardPointOfService
+    properties:
+      authorizationLifeCycle:
+        type: string
+        minLength: 2
+        maxLength: 2
+      cardCaptureCapabilities:
+        type: string
+        minLength: 1
+        maxLength: 1
+      cardPresence:
+        type: string
+        minLength: 1
+        maxLength: 1
+      cardholderPresence:
+        type: string
+        minLength: 1
+        maxLength: 1
+      entryMode:
+        type: string
+        minLength: 3
+        maxLength: 3
+      terminal:
+        $ref: '#/definitions/Operation_MastercardPosTerminal'
+      transactionStatus:
+        type: string
+        minLength: 1
+        maxLength: 1
+      transactionSecurity:
+        type: string
+        minLength: 1
+        maxLength: 1
+    x-stoplight:
+      id: rpq5oip310jwn
+  Operation_MastercardPosTerminal:
+    type: object
+    title: Operation_MastercardPosTerminal
+    properties:
+      attendance:
+        type: string
+        minLength: 1
+        maxLength: 1
+      location:
+        type: string
+        minLength: 1
+        maxLength: 1
+      cardDataInputCapabilityIndicator:
+        type: string
+        minLength: 1
+        maxLength: 1
+    x-stoplight:
+      id: cc75rgo8op0jf
+  Operation_AuthorizationAmexSpecifics:
+    type: object
+    title: Operation_AuthorizationAmexSpecifics
+    properties:
+      pointOfServiceData:
+        type: string
+        minLength: 12
+        maxLength: 12
+      electronicCommerceIndicator:
+        type: string
+        minLength: 2
+        maxLength: 2
+    x-stoplight:
+      id: cu2oyp6v11tbi
+  AuthorizationResponse:
+    type: object
+    title: Authorization Response
+    properties:
+      data:
+        type: object
+        allOf:
+          - $ref: '#/definitions/Authorization'
+          - $ref: '#/definitions/Resumption'
+    x-examples:
+      - data:
+          id: '{authorization-id}'
+          method: CARD
+          card:
+            vendorCode: VI
+            maskedCardNumber: 400000------0001
+          approvalCode: '12345678'
+          timestamp: '2022-11-28T13:37:00Z'
+    x-stoplight:
+      id: o8er21aeygwht
+responses:
+  error-response-400:
+    description: |
+      **400 Bad Request error.** Problem reading or understanding request (Usually missing data or invalid requests). Please find below an exhaustive list of errors:
+
+      code   | - | title
+      ------:|:-:|:-
+      33460  |   | MISSING REQUIRED INPUT PARAM(S) - PLEASE ADJUST REQUEST
+      33459  |   | INVALID INPUT PARAM(S) - PLEASE ADJUST REQUEST
+      00477  |   | INVALID FORMAT
+    schema:
+      $ref: '#/definitions/ErrorResponse'
+    examples:
+      INVALID FORMAT:
+        errors:
+          - code: 477
+            title: INVALID FORMAT
+  error-response-403:
+    description: |
+      **403 Forbidden error.** Generic error linked to permission mismatch. Please find below a non-exhaustive list of errors:
+
+      code   | - | title
+      ------:|:-:|:-
+      01666  |   | NOT ALLOWED
+    schema:
+      $ref: '#/definitions/ErrorResponse'
+    examples:
+      NOT ALLOWED:
+        errors:
+          - code: 1666
+            title: NOT ALLOWED
+  error-response-409:
+    description: |
+      **409 Conflict error.** Generic error linked to conflicting operation. Please find below a non-exhaustive list of errors:
+
+      code   | - | title
+      ------:|:-:|:-
+      33474  |   | PAYMENT TRANSACTION CANCELLED EXTERNALLY.
+      25754  |   | REVERSAL ALREADY PERFORMED
+      33477  |   | PAYMENT TRANSACTION ALREADY CANCELLED OR REFUNDED
+      33478  |   | PAYMENT TRANSACTION ALREADY TOTALLY CANCELLED OR REFUNDED
+      33479  |   | PAYMENT TRANSACTION EXPIRED.
+      25888  |   | PARTIAL REVERSAL DISALLOWED
+      33869  |   | PAYMENT REVERSAL DENIAL DUE TO CAPTURE PROCESSED
+      39041  |   | DUPLICATE REQUEST ERROR
+      09659  |   | CC REVERSAL HAS BEEN LOCKED FOR THIS CARD BY ISSUEING BANK
+      33034  |   | OUT OF REFUND PERIOD
+      33562  |   | PAYMENT PARTIAL REFUND NOT ALLOWED
+      33548  |   | PAYMENT PARTIAL CAPTURE NOT ALLOWED
+       6617  |   | REFUND AMOUNT GREATER THAN SALE
+      42048  |   | UNABLE TO PROCESS REFUND - PARENT OPERATION ID REQUIRED 
+      30366  |   | TRANSACTION ABORTED
+    schema:
+      $ref: '#/definitions/ErrorResponse'
+    examples:
+      Payment was invalid:
+        errors:
+          - code: 33474
+            title: PAYMENT TRANSACTION CANCELLED EXTERNALLY.
+  error-response-422:
+    description: "**422 Unprocessable Entity error.** Generic error linked to unprocessable request. Please find below a non-exhaustive list of errors:\n\ncode   | - | title\n------:|:-:|:-\n00011  |   | \tUNABLE TO PROCESS\n01304  |   |  CREDIT CARD NOT ACCEPTED\n"
+    schema:
+      $ref: '#/definitions/ErrorResponse'
+    examples:
+      CREDIT CARD NOT ACCEPTED:
+        errors:
+          - code: 1304
+            title: CREDIT CARD NOT ACCEPTED
+  error-response-424:
+    description: |
+      **424 Failed Dependency error.** Generic error linked to 3rd party functional rejection. Please find below a non-exhaustive list of errors:
+
+      code   | - | title
+      ------:|:-:|:-
+      04751  |   | INVALID CARD
+      33480  |   | PAYMENT TRANSACTION DECLINED. SUSPECTED FRAUD
+      12678  |   | CC SECURITY ID DOES NOT MATCH
+      04223  |   | NAME MISMATCH
+      12550  |   | AUTHORISATION DENIED INSUFFICIENT FUNDS
+      34869  |   | CREDIT CARD DENIAL - INCORRECT PIN
+      34477  |   | REVERSAL NOT PERFORMED
+      33471  |   | PAYMENT ACTION DECLINED
+      65222  |   | PAYMENT REQUIRES 3D SECURE
+    schema:
+      $ref: '#/definitions/ErrorResponse'
+    examples:
+      PAYMENT ACTION DECLINED:
+        errors:
+          - code: 33471
+            title: PAYMENT ACTION DECLINED
+  error-response-500:
+    description: |
+      **500 Internal Server Error error.** Generic Amadeus internal error. Please find below a non-exhaustive list of errors:
+
+      code   | - | title
+      ------:|:-:|:-
+      00974  |   | SYSTEM UNAVAILABLE
+      00414  |   | INTERNAL PROCESSING ERROR
+      02894  |   | ERROR MESSAGE NOT FOUND
+    schema:
+      $ref: '#/definitions/ErrorResponse'
+    examples:
+      ERROR MESSAGE NOT FOUND:
+        errors:
+          - code: 2894
+            title: ERROR MESSAGE NOT FOUND
+  error-response-502:
+    description: |
+      **502 Bad Gateway error.** Generic communication error downstream. Please find below a non-exhaustive list of errors:
+
+      code   | - | title
+      ------:|:-:|:-
+      33457  |   | COMMUNICATION ERROR - PLEASE TRY AGAIN LATER
+      05038  |   | TIMEOUT ERROR UNKNOWN
+      31787  |   | ISSUER NOT AVAILABLE
+      33503  |   | PAYMENT SERVICE PROVIDER SYSTEM ERROR
+    schema:
+      $ref: '#/definitions/ErrorResponse'
+    examples:
+      ISSUER NOT AVAILABLE:
+        errors:
+          - code: 31787
+            title: ISSUER NOT AVAILABLE
+  error-response:
+    description: |
+      **Standard error.Generic Error (Can be used if HTTP Status Code doesn't match with defined error Codes for now).
+      code   | - | title
+        ------:|:-:|:-
+        00492  |   | ERROR
+    schema:
+      $ref: '#/definitions/ErrorResponse'
+  undefined:
+    description: |
+      **409 Conflict error.** Generic error linked to conflicting operation. Please find below a non-exhaustive list of errors:
+
+      code   | - | title
+      ------:|:-:|:-
+      33474  |   | PAYMENT TRANSACTION CANCELLED EXTERNALLY.
+      25754  |   | REVERSAL ALREADY PERFORMED
+      33477  |   | PAYMENT TRANSACTION ALREADY CANCELLED OR REFUNDED
+      33478  |   | PAYMENT TRANSACTION ALREADY TOTALLY CANCELLED OR REFUNDED
+      33479  |   | PAYMENT TRANSACTION EXPIRED.
+      25888  |   | PARTIAL REVERSAL DISALLOWED
+      33869  |   | PAYMENT REVERSAL DENIAL DUE TO CAPTURE PROCESSED
+      39041  |   | DUPLICATE REQUEST ERROR
+      09659  |   | CC REVERSAL HAS BEEN LOCKED FOR THIS CARD BY ISSUEING BANK
+      33034  |   | OUT OF REFUND PERIOD
+      33562  |   | PAYMENT PARTIAL REFUND NOT ALLOWED
+      33548  |   | PAYMENT PARTIAL CAPTURE NOT ALLOWED
+       6617  |   | REFUND AMOUNT GREATER THAN SALE
+      42048  |   | UNABLE TO PROCESS REFUND - PARENT OPERATION ID REQUIRED 
+      30366  |   | TRANSACTION ABORTED
+    schema:
+      $ref: '#/definitions/ErrorResponse'
+    examples:
+      Payment was invalid:
+        errors:
+          - code: 33474
+            title: PAYMENT TRANSACTION CANCELLED EXTERNALLY.

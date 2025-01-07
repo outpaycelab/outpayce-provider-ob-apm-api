@@ -9,5 +9,5 @@ To explore the Swagger specification we recommend using the Swagger toolset offl
  2. Unzip the folder.
  3. Open the _index.html_ file.
  4. Paste the Swagger specification.
- 
-![How to use swagger editor](https://github.com/outpaycelab/outpayce-provider-nexi-api/blob/main/assets/animation-swagger.gif)
+
+![How to use swagger editor](https://github.com/outpaycelab/outpayce-provider-ob-apm-api/blob/main/assets/animation-swagger.gif)
